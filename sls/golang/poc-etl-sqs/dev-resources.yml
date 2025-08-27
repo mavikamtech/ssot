@@ -1,0 +1,45 @@
+---
+Resources:
+  PocEtlSqsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    DependsOn: MavikPocEtlSqsStream
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Id: MyQueuePolicy
+        Statement:
+          - Sid: Allow-SNS-SendMessage
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt MavikPocEtlSqsStream.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: ${self:custom.services.SNS_POC_ETL.${self:provider.stage}}
+      Queues:
+        - !Ref MavikPocEtlSqsStream
+
+  PocEtlEventStaging:
+    Type: AWS::SNS::Subscription
+    DependsOn: MavikPocEtlSqsStream
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt MavikPocEtlSqsStream.Arn
+      Region: us-east-1
+      TopicArn: ${self:custom.services.SNS_POC_ETL.${self:provider.stage}}
+
+  MavikPocEtlSqsStream:
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: mavik-poc-etl-${self:provider.stage}
+      VisibilityTimeout: 900
+
+  GenomePocEtlEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    DependsOn: MavikPocEtlSqsStream
+    Properties:
+      BatchSize: 10
+      MaximumBatchingWindowInSeconds: 60
+      EventSourceArn: !GetAtt MavikPocEtlSqsStream.Arn
+      FunctionName: !GetAtt PocDashetlDashsqsLambdaFunction.Arn

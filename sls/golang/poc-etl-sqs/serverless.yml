@@ -1,0 +1,33 @@
+service: poc-etl-sqs
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  runtime: provided.al2
+  architecture: arm64
+  role: arn:aws:iam::167067248318:role/MavikLambdaRole
+
+custom:
+  services:
+    SNS_POC_ETL:
+      dev: arn:aws:sns:us-east-1:167067248318:s3-event-poc
+      staging: arn:aws:sns:us-east-1:167067248318:s3-event-poc
+      edge: aarn:aws:sns:us-east-1:167067248318:s3-event-poc
+      prod: aarn:aws:sns:us-east-1:167067248318:s3-event-poc
+  
+package:
+    artifact: ../bin/poc-etl-sqs.zip
+
+functions:
+  poc-etl-sqs:
+    name: poc-etl-sqs-${self:provider.stage}
+    handler: bootstrap
+    url: true
+    environment:
+      ENDPOINT: https://dummyjson.com/products
+      DYNAMO_TABLE_NAME: sample-data
+
+resources:
+  - ${file(./${self:provider.stage}-resources.yml), null}

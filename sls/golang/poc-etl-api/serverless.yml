@@ -1,0 +1,22 @@
+service: poc-etl-api
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  runtime: provided.al2
+  architecture: arm64
+  role: arn:aws:iam::167067248318:role/MavikLambdaRole
+  
+package:
+    artifact: ../bin/poc-etl-api.zip
+
+functions:
+  poc-etl-api:
+    name: poc-etl-api-${self:provider.stage}
+    handler: bootstrap
+    url: true
+    environment:
+      ENDPOINT: https://dummyjson.com/products
+      DYNAMO_TABLE_NAME: sample-data
