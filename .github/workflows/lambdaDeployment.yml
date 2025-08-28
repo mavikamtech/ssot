@@ -46,7 +46,7 @@ jobs:
           fi
 
           if [ -n "$SELECTED" ]; then
-            JSON=$(printf '%s\n' $SELECTED | jq -R . | jq -s .)
+            JSON=$(printf '%s\n' $SELECTED | jq -R . | jq -sc .)
           else
             JSON="[]"
           fi
