@@ -22,7 +22,7 @@ sls/golang/
   │   └── serverless.yml
   ├── lambda2/
   │   └── serverless.yml
-  ├── lambda2/
+  ├── lambda3/
   │   └── serverless.yml
   └── ...
 ```
