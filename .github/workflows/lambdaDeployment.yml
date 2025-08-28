@@ -1,0 +1,81 @@
+name: Build and Deploy all lambdas (Serverless + Go)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "poc-etl-api/**"
+      - ".github/workflows/deploy-all.yml"
+      - "go.mod"
+      - "go.sum"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-all-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AWS_REGION: us-east-1
+      STAGE: dev
+      SLS_TELEMETRY_DISABLED: "1"   
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Build poc-etl-api (linux/arm64)
+        working-directory: sls/golang
+        run: |
+          mkdir -p bin
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+            go build -tags lambda.norpc -o bin/bootstrap ./poc-etl-api
+          (cd bin && zip -q poc-etl-api.zip bootstrap && rm -f bootstrap)
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::167067248318:role/GithubActionServiceRole
+          role-session-name: gh-oidc-poc-etl-api
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build & Deploy all Lambdas
+        working-directory: sls/golang
+        run: |
+          mkdir -p bin
+
+          for dir in */; do
+            # skip non-directories
+            [ -d "$dir" ] || continue
+
+            # skip bin folder
+            if [ "$dir" = "bin/" ]; then
+              continue
+            fi
+
+            echo "🚀 Building $dir"
+            GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+              go build -tags lambda.norpc -o bin/bootstrap "./$dir"
+
+            ZIP_NAME="$(basename "$dir").zip"
+            (cd bin && zip -q "$ZIP_NAME" bootstrap && rm -f bootstrap)
+
+            echo "📦 Deploying $dir with artifact ../bin/$ZIP_NAME"
+            (cd "$dir" && npx --yes serverless@3 deploy --stage $STAGE --region $AWS_REGION)
+          done
