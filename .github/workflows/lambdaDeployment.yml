@@ -18,13 +18,42 @@ jobs:
       - uses: actions/checkout@v4
 
       - id: set-matrix
+        shell: bash
         run: |
-          cd sls/golang
-          dirs=$(find . -maxdepth 1 -type d ! -name ".*" ! -name "bin" \
-                 -exec test -f "{}/serverless.yml" \; -print | sed 's|^\./||')
-          echo "Found services: $dirs"
-          json=$(printf '%s\n' $dirs | jq -R . | jq -s .)
-          echo "services=$json" >> $GITHUB_OUTPUT
+          set -euo pipefail
+      
+          ALL_SERVICES=$(find sls/golang -maxdepth 1 -mindepth 1 -type d ! -name "bin" \
+                                -exec test -f "{}/serverless.yml" \; -print \
+                                | sed 's|^sls/golang/||')
+      
+          CHANGED_SERVICES=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            BEFORE="${{ github.event.before }}"
+            AFTER="${{ github.sha }}"
+            DIFF_PATHS=$(git diff --name-only "$BEFORE" "$AFTER" -- 'sls/golang/**' 'go.mod' 'go.sum' || true)
+            CHANGED_SERVICES=$(echo "$DIFF_PATHS" | grep '^sls/golang/' | cut -d/ -f3 | sort -u || true)
+          fi
+      
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SELECTED="$ALL_SERVICES"
+          else
+            SELECTED=""
+            for svc in $CHANGED_SERVICES; do
+              if echo "$ALL_SERVICES" | grep -qx "$svc"; then
+                SELECTED="$SELECTED $svc"
+              fi
+            done
+          fi
+      
+          if [ -n "$SELECTED" ]; then
+            JSON=$(printf '%s\n' $SELECTED | jq -R . | jq -sc .)
+          else
+            JSON="[]"
+          fi
+      
+          echo "Selected services: $JSON"
+          echo "services=$JSON" >> "$GITHUB_OUTPUT"
+
 
   deploy:
     needs: discover
