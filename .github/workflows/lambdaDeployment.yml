@@ -1,30 +1,48 @@
-name: Build and Deploy all lambdas (Serverless + Go)
+name: Build and Deploy all lambdas in Parallel (Serverless + Go)
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - "poc-etl-api/**"
-      - ".github/workflows/lambdaDeployment.yml"
+      - "sls/golang/**"
       - "go.mod"
       - "go.sum"
   workflow_dispatch:
 
-concurrency:
-  group: deploy-all-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  deploy:
+  discover:
     runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.set-matrix.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: set-matrix
+        run: |
+          cd sls/golang
+          dirs=$(find . -maxdepth 1 -type d ! -name ".*" ! -name "bin" \
+                 -exec test -f "{}/serverless.yml" \; -print | sed 's|^\./||')
+          echo "Found services: $dirs"
+          json=$(printf '%s\n' $dirs | jq -R . | jq -s .)
+          echo "services=$json" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 20       
+      matrix:
+        service: ${{ fromJson(needs.discover.outputs.services) }}
+
     permissions:
-      contents: read
       id-token: write
+      contents: read
 
     env:
       AWS_REGION: us-east-1
       STAGE: dev
-      SLS_TELEMETRY_DISABLED: "1"   
+      SLS_TELEMETRY_DISABLED: "1"
 
     steps:
       - name: Checkout
@@ -34,14 +52,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
-
-      - name: Build poc-etl-api (linux/arm64)
-        working-directory: sls/golang
-        run: |
-          mkdir -p bin
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
-            go build -tags lambda.norpc -o bin/bootstrap ./poc-etl-api
-          (cd bin && zip -q poc-etl-api.zip bootstrap && rm -f bootstrap)
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -55,27 +65,15 @@ jobs:
           role-session-name: gh-oidc-poc-etl-api
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build & Deploy all Lambdas
+      - name: Build & Deploy ${{ matrix.service }}
         working-directory: sls/golang
         run: |
+          svc="${{ matrix.service }}"
+          echo "🚀 Building $svc"
           mkdir -p bin
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+            go build -tags lambda.norpc -o bin/bootstrap "./$svc"
+          (cd bin && zip -q "$svc.zip" bootstrap && rm -f bootstrap)
 
-          for dir in */; do
-            # skip non-directories
-            [ -d "$dir" ] || continue
-
-            # skip bin folder
-            if [ "$dir" = "bin/" ]; then
-              continue
-            fi
-
-            echo "🚀 Building $dir"
-            GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
-              go build -tags lambda.norpc -o bin/bootstrap "./$dir"
-
-            ZIP_NAME="$(basename "$dir").zip"
-            (cd bin && zip -q "$ZIP_NAME" bootstrap && rm -f bootstrap)
-
-            echo "📦 Deploying $dir with artifact ../bin/$ZIP_NAME"
-            (cd "$dir" && npx --yes serverless@3 deploy --stage $STAGE --region $AWS_REGION)
-          done
+          echo "📦 Deploying $svc with artifact ../bin/$svc.zip"
+          (cd "$svc" && npx --yes serverless@3 deploy --stage $STAGE --region $AWS_REGION)
