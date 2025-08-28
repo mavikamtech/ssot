@@ -21,38 +21,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cd sls/golang
       
-          ALL_SERVICES=$(find sls/golang -maxdepth 1 -mindepth 1 -type d ! -name "bin" \
-                                -exec test -f "{}/serverless.yml" \; -print \
-                                | sed 's|^sls/golang/||')
+          mapfile -t services < <(find . -maxdepth 1 -mindepth 1 -type d \
+              ! -name ".*" ! -name "bin" \
+              -exec test -f "{}/serverless.yml" \; -print | sed 's|^\./||')
       
-          CHANGED_SERVICES=""
-          if [ "${{ github.event_name }}" = "push" ]; then
-            BEFORE="${{ github.event.before }}"
-            AFTER="${{ github.sha }}"
-            DIFF_PATHS=$(git diff --name-only "$BEFORE" "$AFTER" -- 'sls/golang/**' 'go.mod' 'go.sum' || true)
-            CHANGED_SERVICES=$(echo "$DIFF_PATHS" | grep '^sls/golang/' | cut -d/ -f3 | sort -u || true)
-          fi
-      
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            SELECTED="$ALL_SERVICES"
+          if [ ${#services[@]} -eq 0 ]; then
+            json='[]'
           else
-            SELECTED=""
-            for svc in $CHANGED_SERVICES; do
-              if echo "$ALL_SERVICES" | grep -qx "$svc"; then
-                SELECTED="$SELECTED $svc"
-              fi
-            done
+            json=$(printf '%s\n' "${services[@]}" | jq -R -s -c 'split("\n")[:-1]')
           fi
       
-          if [ -n "$SELECTED" ]; then
-            JSON=$(printf '%s\n' $SELECTED | jq -R . | jq -sc .)
-          else
-            JSON="[]"
-          fi
-      
-          echo "Selected services: $JSON"
-          echo "services=$JSON" >> "$GITHUB_OUTPUT"
+          echo "Found services: $json"
+          echo "services=$json" >> "$GITHUB_OUTPUT"
+
 
 
   deploy:
@@ -60,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 20       
+      max-parallel: 2       
       matrix:
         service: ${{ fromJson(needs.discover.outputs.services) }}
 
