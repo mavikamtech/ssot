@@ -18,7 +18,7 @@ func handler(ctx context.Context, req events.LambdaFunctionURLRequest) (Resp, er
 		name = "world"
 	}
 
-	fmt.Println("111TESTER: ", "nihao")
+	fmt.Println("111TESTER: ", "nihao!")
 	return Resp{Message: fmt.Sprintf("Hello, %s! From Go Lambda.", name)}, nil
 }
 
