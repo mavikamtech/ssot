@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - "poc-etl-api/**"
-      - ".github/workflows/deploy-all.yml"
+      - ".github/workflows/lambdaDeployment.yml"
       - "go.mod"
       - "go.sum"
   workflow_dispatch:
