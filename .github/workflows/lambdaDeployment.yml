@@ -16,45 +16,62 @@ jobs:
       services: ${{ steps.set-matrix.outputs.services }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - id: set-matrix
         shell: bash
         run: |
           set -euo pipefail
-
+      
           ALL_SERVICES=$(find sls/golang -maxdepth 1 -mindepth 1 -type d ! -name "bin" \
-                                -exec test -f "{}/serverless.yml" \; -print \
-                                | sed 's|^sls/golang/||')
-
-          CHANGED_SERVICES=""
-          if [ "${{ github.event_name }}" = "push" ]; then
-            BEFORE="${{ github.event.before }}"
-            AFTER="${{ github.sha }}"
-            DIFF_PATHS=$(git diff --name-only "$BEFORE" "$AFTER" -- 'sls/golang/**' 'go.mod' 'go.sum' || true)
-            CHANGED_SERVICES=$(echo "$DIFF_PATHS" | grep '^sls/golang/' | cut -d/ -f3 | sort -u || true)
-          fi
-
+                            -exec test -f "{}/serverless.yml" \; -print \
+                            | sed 's|^sls/golang/||')
+      
+          SELECTED=""
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             SELECTED="$ALL_SERVICES"
           else
-            SELECTED=""
-            for svc in $CHANGED_SERVICES; do
-              if echo "$ALL_SERVICES" | grep -qx "$svc"; then
-                SELECTED="$SELECTED $svc"
+            # triggered by push
+            BEFORE="${{ github.event.before }}"
+            AFTER="${{ github.sha }}"
+      
+            if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+              echo "⚠️ BEFORE not found locally, fallback to AFTER^"
+              if git cat-file -e "${AFTER}^"^{commit} 2>/dev/null; then
+                BEFORE="$(git rev-parse "${AFTER}^")"
+              else
+                echo "⚠️ No parent for AFTER; fallback to full deploy."
+                SELECTED="$ALL_SERVICES"
               fi
-            done
+            fi
+      
+            if [ -z "$SELECTED" ]; then
+              DIFF_PATHS=$(git diff --name-only "$BEFORE" "$AFTER" -- 'sls/golang/**' 'go.mod' 'go.sum' || true)
+              CHANGED=$(echo "$DIFF_PATHS" | grep '^sls/golang/' | cut -d/ -f3 | sort -u || true)
+      
+              for svc in $CHANGED; do
+                if echo "$ALL_SERVICES" | grep -qx "$svc"; then
+                  SELECTED="$SELECTED $svc"
+                fi
+              done
+      
+              # during a go.mod/go.sum change full deployment will still be triggered
+              if echo "$DIFF_PATHS" | grep -Eq '(^|/)(go\.mod|go\.sum)$'; then
+                echo "ℹ️ go.mod/go.sum changed → selecting all services."
+                SELECTED="$ALL_SERVICES"
+              fi
+            fi
           fi
-
+      
           if [ -n "$SELECTED" ]; then
             JSON=$(printf '%s\n' $SELECTED | jq -R . | jq -sc .)
           else
             JSON="[]"
           fi
-
+      
           echo "Selected services: $JSON"
           echo "services=$JSON" >> "$GITHUB_OUTPUT"
-
-
 
   deploy:
     needs: discover
