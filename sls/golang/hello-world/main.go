@@ -19,7 +19,7 @@ func handler(ctx context.Context, req events.LambdaFunctionURLRequest) (Resp, er
 	}
 
 	fmt.Println("111TESTER: ", "nihao!")
-	return Resp{Message: fmt.Sprintf("Hello, %s! From Go Lambda.", name)}, nil
+	return Resp{Message: fmt.Sprintf("Hello, %s! From Go Lambda!", name)}, nil
 }
 
 func main() {
