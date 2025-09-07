@@ -41,6 +41,19 @@ deploy-poc-etl-sqs: build-poc-etl-sqs
 remove-poc-etl-sqs:
 	cd poc-etl-sqs && npx serverless remove --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
 
+	
+# =============== poc-etl-powerbi-api ===============
+build-poc-etl-powerbi-api: $(BIN_DIR)
+	@echo "==> Building poc-etl-powerbi-api..."
+	powershell -Command '$$env:GOOS="linux"; $$env:GOARCH="arm64"; $$env:CGO_ENABLED="0"; go build -tags lambda.norpc -o "$(BIN_DIR)/bootstrap" ./poc-etl-powerbi-api'
+	powershell -Command 'Compress-Archive -Path "$(BIN_DIR)/bootstrap" -DestinationPath "$(BIN_DIR)/poc-etl-powerbi-api.zip" -Force'
+
+deploy-poc-etl-powerbi-api: build-poc-etl-powerbi-api
+	cd poc-etl-powerbi-api && npx serverless deploy --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+
+remove-poc-etl-powerbi-api:
+	cd poc-etl-powerbi-api && npx serverless remove --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+
 
 # General
 $(BIN_DIR):
