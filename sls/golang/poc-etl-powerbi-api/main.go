@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"unicode"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -46,13 +47,15 @@ func handler(ctx context.Context) error {
 		return err
 	}
 
+	keyNormalizer := NewNormalizer("Dim_Job[", "]")
+
 	for _, r := range resp.Results {
 		for _, t := range r.Tables {
 			for _, row := range t.Rows {
 				item := map[string]types.AttributeValue{}
 
 				for key, val := range row {
-					formattedKey, formattedVal := parseDbField(key, val)
+					formattedKey, formattedVal := parseDbField(key, val, keyNormalizer)
 					item[formattedKey] = formattedVal
 				}
 
@@ -115,7 +118,7 @@ func getToken(ctx context.Context, awsCfg aws.Config, key string) (string, error
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("bad request, Status Code: %v", res.StatusCode)
+		return "", fmt.Errorf("getToken bad request, Status Code: %v", res.StatusCode)
 	}
 
 	body, err := io.ReadAll(res.Body)
@@ -144,7 +147,14 @@ func getApiResponse(ctx context.Context, awsCfg aws.Config) (*apiResponse, error
 
 	powerBiUrl := fmt.Sprintf("%s/v1.0/myorg/groups/%s/datasets/%s/executeQueries", powerbiEndpoint, dst.WorkspaceID, dst.DatasetID)
 
-	payload := strings.NewReader(`{"queries": [{"query": "EVALUATE TOPN(100, 'Table')"}]}`)
+	payload := strings.NewReader(`{
+  "queries": [
+    {
+      "query": "EVALUATE VALUES(Dim_Job)"
+    }
+  ]
+}
+`)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, powerBiUrl, payload)
 	if err != nil {
@@ -161,7 +171,7 @@ func getApiResponse(ctx context.Context, awsCfg aws.Config) (*apiResponse, error
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad request, Status Code: %v", resp.StatusCode)
+		return nil, fmt.Errorf("getData bad request, Status Code: %v", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -181,24 +191,13 @@ func main() {
 	lambda.Start(handler)
 }
 
-func parseDbField(key string, value any) (formatedKey string, formatedValue *types.AttributeValueMemberS) {
-	switch {
-	case strings.HasSuffix(key, "Investment Name]"):
-		formatedKey = "investmentName"
-	case strings.HasSuffix(key, "Period to Date]"):
-		formatedKey = "periodToDate"
-	case strings.HasSuffix(key, "Period to Date %]"):
-		formatedKey = "periodToDatePresentage"
-	case strings.HasSuffix(key, "Year to Date]"):
-		formatedKey = "yearToDate"
-	case strings.HasSuffix(key, "Year to Date %]"):
-		formatedKey = "yearToDatePresentage"
-	}
+func parseDbField(key string, value any, keyNormalizer func(string) string) (formatedKey string, formatedValue *types.AttributeValueMemberS) {
+	formatedKey = keyNormalizer(key)
 
 	switch val := value.(type) {
 	case string:
 		formatedValue = &types.AttributeValueMemberS{Value: strings.Trim(val, " ")}
-	case float64, float32, int:
+	case float64, float32, int, bool:
 		formatedValue = &types.AttributeValueMemberS{Value: fmt.Sprintf("%v", val)}
 	case nil:
 		fmt.Println("Got a nil value")
@@ -206,4 +205,37 @@ func parseDbField(key string, value any) (formatedKey string, formatedValue *typ
 		fmt.Printf("Got an unknown type %T: %v\n", val, val)
 	}
 	return
+}
+
+func removePrefixAndSuffix(s, prefix, suffix string) string {
+	s = strings.TrimPrefix(s, prefix)
+	s = strings.TrimSuffix(s, suffix)
+	return s
+}
+
+func convertKeyToCamel(key string) string {
+	key = strings.TrimSpace(key)
+	words := strings.Fields(strings.ReplaceAll(key, "_", " "))
+	if len(words) == 0 {
+		return ""
+	}
+
+	result := strings.ToLower(words[0])
+
+	for _, w := range words[1:] {
+		if w == "" {
+			continue
+		}
+		runes := []rune(strings.ToLower(w))
+		runes[0] = unicode.ToUpper(runes[0])
+		result += string(runes)
+	}
+	return result
+}
+
+func NewNormalizer(prefix, suffix string) func(string) string {
+	return func(key string) string {
+		cleaned := removePrefixAndSuffix(key, prefix, suffix)
+		return convertKeyToCamel(cleaned)
+	}
 }
