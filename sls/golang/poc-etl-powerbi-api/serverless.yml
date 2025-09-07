@@ -20,6 +20,6 @@ functions:
     environment:
       ENDPOINT: https://api.powerbi.com
       SECRET_ENDPOINT: https://login.microsoftonline.com
-      DYNAMO_TABLE_NAME: test-poc-powerbi-api
+      DYNAMO_TABLE_NAME: test-poc-powerbi-api-Job
       POWERBI_APPLICATION_CONFIG_NAME: powerbi-application-config
       POWERBI_APPLICATION_SECRET_NAME: powerbi-application-secret
