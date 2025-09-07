@@ -1,0 +1,25 @@
+service: poc-etl-powerbi-api
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  runtime: provided.al2
+  architecture: arm64
+  role: arn:aws:iam::167067248318:role/MavikLambdaRole
+  
+package:
+    artifact: ../bin/poc-etl-powerbi-api.zip
+
+functions:
+  poc-etl-api:
+    name: poc-etl-powerbi-api-${self:provider.stage}
+    handler: bootstrap
+    url: true
+    environment:
+      ENDPOINT: https://api.powerbi.com
+      SECRET_ENDPOINT: https://login.microsoftonline.com
+      DYNAMO_TABLE_NAME: test-poc-powerbi-api
+      POWERBI_APPLICATION_CONFIG_NAME: powerbi-application-config
+      POWERBI_APPLICATION_SECRET_NAME: powerbi-application-secret
