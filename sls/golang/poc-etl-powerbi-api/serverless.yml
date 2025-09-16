@@ -8,6 +8,8 @@ provider:
   runtime: provided.al2
   architecture: arm64
   role: arn:aws:iam::167067248318:role/MavikLambdaRole
+  deploymentBucket:
+    name: ssot-lambda-build-deploy
   
 package:
     artifact: ../bin/poc-etl-powerbi-api.zip
