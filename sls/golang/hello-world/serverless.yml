@@ -7,6 +7,8 @@ provider:
   stage: ${opt:stage, 'dev'}
   runtime: provided.al2
   architecture: arm64
+  deploymentBucket:
+    name: ssot-lambda-build-deploy
   
 package:
     artifact: ../bin/hello-world.zip
