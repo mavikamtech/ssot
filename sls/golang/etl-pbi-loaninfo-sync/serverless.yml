@@ -1,0 +1,27 @@
+service: etl-pbi-loaninfo-sync
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  runtime: provided.al2
+  architecture: arm64
+  role: arn:aws:iam::167067248318:role/MavikLambdaRole
+  deploymentBucket:
+    name: ssot-lambda-build-deploy
+  
+package:
+    artifact: ../bin/etl-pbi-loaninfo-sync.zip
+
+functions:
+  etl-pbi-loaninfo-sync:
+    name: etl-pbi-loaninfo-sync-${self:provider.stage}
+    handler: bootstrap
+    url: true
+    environment:
+      ENDPOINT: https://api.powerbi.com
+      SECRET_ENDPOINT: https://login.microsoftonline.com
+      DYNAMO_TABLE_NAME: pbi-loaninfo
+      POWERBI_APPLICATION_CONFIG_NAME: powerbi-application-config
+      POWERBI_APPLICATION_SECRET_NAME: powerbi-application-secret
