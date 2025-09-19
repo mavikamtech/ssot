@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -80,11 +81,14 @@ func Handler(ctx context.Context) error {
 	// Find column indices for postdate and maxHmy
 	postdateColIdx := -1
 	maxHmyColIdx := -1
+	loancodeColIdx := -1
 	for i, header := range headers {
 		if strings.EqualFold(header, "postdate") {
 			postdateColIdx = i
 		} else if strings.EqualFold(header, "maxHmy") {
 			maxHmyColIdx = i
+		} else if strings.EqualFold(header, "loancode") {
+			loancodeColIdx = i
 		}
 	}
 
@@ -99,7 +103,7 @@ func Handler(ctx context.Context) error {
 		hasData := false
 
 		// Track postdate and maxHmy values
-		var postdate, maxHmy string
+		var postdate, maxHmy, loancode string
 
 		for colIdx, cellValue := range row {
 			if colIdx >= len(headers) || headers[colIdx] == "" {
@@ -133,6 +137,10 @@ func Handler(ctx context.Context) error {
 				if sv, ok := attrValue.(*types.AttributeValueMemberN); ok {
 					maxHmy = sv.Value
 				}
+			case loancodeColIdx:
+				if sv, ok := attrValue.(*types.AttributeValueMemberS); ok {
+					loancode = sv.Value
+				}
 			default:
 				item[headers[colIdx]] = attrValue
 			}
@@ -152,11 +160,18 @@ func Handler(ctx context.Context) error {
 		if maxHmyColIdx != -1 {
 			item["maxHmy"] = &types.AttributeValueMemberS{Value: maxHmy}
 		}
+		if loancodeColIdx != -1 {
+			item["loancode"] = &types.AttributeValueMemberS{Value: loancode}
+		}
 
 		// Add the required composite key field
 		if postdate != "" && maxHmy != "" {
 			compositeKey := fmt.Sprintf("%s#%s", postdate, maxHmy)
 			item["postdate#maxHmy"] = &types.AttributeValueMemberS{Value: compositeKey}
+
+			// Add a loancode#shardId field with random shardId from 0-9
+			shardId := rand.Intn(10) // Random number between 0 and 9
+			item["loancode#shardId"] = &types.AttributeValueMemberS{Value: fmt.Sprintf("%s#%d", loancode, shardId)}
 		} else {
 			log.Printf("Skipping row %d: missing required postdate or maxHmy values", rowIdx)
 			continue // Skip rows without the required key fields
@@ -178,6 +193,8 @@ func Handler(ctx context.Context) error {
 }
 
 func main() {
+	// Seed the random number generator
+	rand.Seed(time.Now().UnixNano())
 	lambda.Start(Handler)
 }
 
