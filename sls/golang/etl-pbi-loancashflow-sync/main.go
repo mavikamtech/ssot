@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/xuri/excelize/v2"
@@ -28,11 +28,11 @@ func Handler(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("load aws config failed: %w", err)
 	}
-	dynamoClient := dynamodb.NewFromConfig(awscfg)
+	// dynamoClient := dynamodb.NewFromConfig(awscfg)
 	s3Client := s3.NewFromConfig(awscfg)
 
-	bucket := "rec.S3.Bucket.Name"
-	key := "rec.S3.Object.Key"
+	bucket := "loancashflow-sync-excel"
+	key := "YDC-Response-LoanCashFlow-Camden-Only.xlsx"
 	fmt.Printf("Processing file from S3: bucket=%s key=%s\n", bucket, key)
 
 	obj, err := s3Client.GetObject(ctx, &s3.GetObjectInput{
@@ -70,59 +70,50 @@ func Handler(ctx context.Context) error {
 		return fmt.Errorf("not enough rows in sheet")
 	}
 
-	// Process headers - convert them to camelCase
 	headerRow := rows[0]
 	headers := make([]string, len(headerRow))
 	for i, header := range headerRow {
 		headers[i] = toCamelCase(header)
 	}
 
-	// Process data rows (skip the header row)
 	for rowIdx := 1; rowIdx < len(rows); rowIdx++ {
 		row := rows[rowIdx]
 
-		// Skip empty rows
 		if len(row) == 0 {
 			continue
 		}
 
-		// Build DynamoDB item
 		item := map[string]types.AttributeValue{}
 		hasData := false
 
-		// Add row number as id if needed
-		item["id"] = &types.AttributeValueMemberS{Value: fmt.Sprintf("row-%d", rowIdx)}
-
-		// Process each cell in the row
 		for colIdx, cellValue := range row {
 			if colIdx >= len(headers) || headers[colIdx] == "" {
 				continue // Skip columns without headers
 			}
 
-			// Parse the value
 			attrValue := parseValue(cellValue)
 
-			// Skip null values
 			if _, isNull := attrValue.(*types.AttributeValueMemberNULL); isNull {
 				continue
 			}
 
-			// Add to item
 			item[headers[colIdx]] = attrValue
 			hasData = true
 		}
 
-		// Skip rows with no valid data
 		if !hasData {
 			log.Printf("Skipping row %d: no valid data", rowIdx)
 			continue
 		}
 
-		// Insert into DynamoDB
-		_, err = dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
-			TableName: &tableName,
-			Item:      item,
-		})
+		fmt.Println(tableName)
+		itemStr, _ := json.Marshal(item)
+		fmt.Println(string(itemStr))
+
+		// _, err = dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
+		// 	TableName: &tableName,
+		// 	Item:      item,
+		// })
 
 		if err != nil {
 			log.Printf("DynamoDB insert failed for row %d: %v", rowIdx, err)
