@@ -54,6 +54,30 @@ deploy-poc-etl-powerbi-api: build-poc-etl-powerbi-api
 remove-poc-etl-powerbi-api:
 	cd poc-etl-powerbi-api && npx serverless remove --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
 
+# =============== etl-pbi-loaninfo-sync ===============
+build-etl-pbi-loaninfo-sync: $(BIN_DIR)
+	@echo "==> Building etl-pbi-loaninfo-sync..."
+	powershell -Command '$$env:GOOS="linux"; $$env:GOARCH="arm64"; $$env:CGO_ENABLED="0"; go build -tags lambda.norpc -o "$(BIN_DIR)/bootstrap" ./etl-pbi-loaninfo-sync'
+	powershell -Command 'Compress-Archive -Path "$(BIN_DIR)/bootstrap" -DestinationPath "$(BIN_DIR)/etl-pbi-loaninfo-sync.zip" -Force'
+
+deploy-etl-pbi-loaninfo-sync: build-etl-pbi-loaninfo-sync
+	cd etl-pbi-loaninfo-sync && npx serverless deploy --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+
+remove-etl-pbi-loaninfo-sync:
+	cd etl-pbi-loaninfo-sync && npx serverless remove --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+
+
+# =============== etl-pbi-loancashflow-sync ===============
+build-etl-pbi-loancashflow-sync: $(BIN_DIR)
+	@echo "==> Building etl-pbi-loancashflow-sync..."
+	powershell -Command '$$env:GOOS="linux"; $$env:GOARCH="arm64"; $$env:CGO_ENABLED="0"; go build -tags lambda.norpc -o "$(BIN_DIR)/bootstrap" ./etl-pbi-loancashflow-sync'
+	powershell -Command 'Compress-Archive -Path "$(BIN_DIR)/bootstrap" -DestinationPath "$(BIN_DIR)/etl-pbi-loancashflow-sync.zip" -Force'
+
+deploy-etl-pbi-loancashflow-sync: build-etl-pbi-loancashflow-sync
+	cd etl-pbi-loancashflow-sync && npx serverless deploy --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+
+remove-etl-pbi-loancashflow-sync:
+	cd etl-pbi-loancashflow-sync && npx serverless remove --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
 
 # General
 $(BIN_DIR):

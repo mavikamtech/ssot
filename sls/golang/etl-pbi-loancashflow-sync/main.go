@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/xuri/excelize/v2"
@@ -28,7 +28,7 @@ func Handler(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("load aws config failed: %w", err)
 	}
-	// dynamoClient := dynamodb.NewFromConfig(awscfg)
+	dynamoClient := dynamodb.NewFromConfig(awscfg)
 	s3Client := s3.NewFromConfig(awscfg)
 
 	bucket := "loancashflow-sync-excel"
@@ -106,14 +106,10 @@ func Handler(ctx context.Context) error {
 			continue
 		}
 
-		fmt.Println(tableName)
-		itemStr, _ := json.Marshal(item)
-		fmt.Println(string(itemStr))
-
-		// _, err = dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
-		// 	TableName: &tableName,
-		// 	Item:      item,
-		// })
+		_, err = dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
+			TableName: &tableName,
+			Item:      item,
+		})
 
 		if err != nil {
 			log.Printf("DynamoDB insert failed for row %d: %v", rowIdx, err)
@@ -165,9 +161,14 @@ func parseValue(val string) types.AttributeValue {
 	// Remove commas for number parsing
 	numVal := strings.ReplaceAll(trimmedVal, ",", "")
 
-	// Try to parse as float
+	// Try to parse as integer first
+	if intVal, err := strconv.ParseInt(numVal, 10, 64); err == nil {
+		return &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", intVal)}
+	}
+
+	// If not integer, try to parse as float
 	if floatVal, err := strconv.ParseFloat(numVal, 64); err == nil {
-		return &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", floatVal)}
+		return &types.AttributeValueMemberN{Value: fmt.Sprintf("%g", floatVal)}
 	}
 
 	// Try to parse as boolean
