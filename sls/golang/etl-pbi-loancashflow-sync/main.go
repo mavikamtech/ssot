@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -76,6 +77,17 @@ func Handler(ctx context.Context) error {
 		headers[i] = toCamelCase(header)
 	}
 
+	// Find column indices for postdate and maxHmy
+	postdateColIdx := -1
+	maxHmyColIdx := -1
+	for i, header := range headers {
+		if strings.EqualFold(header, "postdate") {
+			postdateColIdx = i
+		} else if strings.EqualFold(header, "maxHmy") {
+			maxHmyColIdx = i
+		}
+	}
+
 	for rowIdx := 1; rowIdx < len(rows); rowIdx++ {
 		row := rows[rowIdx]
 
@@ -85,6 +97,9 @@ func Handler(ctx context.Context) error {
 
 		item := map[string]types.AttributeValue{}
 		hasData := false
+
+		// Track postdate and maxHmy values
+		var postdate, maxHmy string
 
 		for colIdx, cellValue := range row {
 			if colIdx >= len(headers) || headers[colIdx] == "" {
@@ -97,13 +112,54 @@ func Handler(ctx context.Context) error {
 				continue
 			}
 
-			item[headers[colIdx]] = attrValue
+			// Save postdate and maxHmy values if found
+			switch colIdx {
+			case postdateColIdx:
+				if sv, ok := attrValue.(*types.AttributeValueMemberS); ok {
+					// Parse the date and convert to ISO8601 format
+					dateStr := sv.Value
+					layout := "1/2/2006 3:04:05 PM" // Go time layout: month/day/year hour:minute:second AM/PM
+					t, err := time.Parse(layout, dateStr)
+					if err == nil {
+						// Successfully parsed, convert to ISO8601 format
+						postdate = t.Format("2006-01-02T15:04:05")
+					} else {
+						// If parsing fails, use the original value
+						log.Printf("Warning: could not parse date '%s': %v", dateStr, err)
+						postdate = dateStr
+					}
+				}
+			case maxHmyColIdx:
+				if sv, ok := attrValue.(*types.AttributeValueMemberN); ok {
+					maxHmy = sv.Value
+				}
+			default:
+				item[headers[colIdx]] = attrValue
+			}
+
 			hasData = true
 		}
 
 		if !hasData {
 			log.Printf("Skipping row %d: no valid data", rowIdx)
 			continue
+		}
+
+		// Set postdate and maxHmy attributes explicitly
+		if postdateColIdx != -1 {
+			item["postdate"] = &types.AttributeValueMemberS{Value: postdate}
+		}
+		if maxHmyColIdx != -1 {
+			item["maxHmy"] = &types.AttributeValueMemberS{Value: maxHmy}
+		}
+
+		// Add the required composite key field
+		if postdate != "" && maxHmy != "" {
+			compositeKey := fmt.Sprintf("%s#%s", postdate, maxHmy)
+			item["postdate#maxHmy"] = &types.AttributeValueMemberS{Value: compositeKey}
+		} else {
+			log.Printf("Skipping row %d: missing required postdate or maxHmy values", rowIdx)
+			continue // Skip rows without the required key fields
 		}
 
 		_, err = dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
