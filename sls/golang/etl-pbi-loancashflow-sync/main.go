@@ -143,6 +143,9 @@ func toCamelCase(s string) string {
 			continue
 		}
 		runes := []rune(strings.ToLower(w))
+		if len(runes) == 0 {
+			continue
+		}
 		runes[0] = unicode.ToUpper(runes[0])
 		result += string(runes)
 	}
