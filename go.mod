@@ -1,4 +1,4 @@
-module hello-lambda-go
+module ssot
 
 go 1.25.0
 
