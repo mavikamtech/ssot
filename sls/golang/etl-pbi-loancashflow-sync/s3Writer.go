@@ -45,45 +45,36 @@ func NewS3Writer(s3Client *s3.Client, bucketName, basePath string) *S3Writer {
 	}
 }
 
-// UploadBatch uploads a batch of records to S3 with proper partitioning
+// UploadBatch uploads a batch of records to S3 using current processing time for partitioning
 func (w *S3Writer) UploadBatch(ctx context.Context, records []LoanCashFlowRecord, sourceFile string) error {
 	if len(records) == 0 {
 		return fmt.Errorf("no records to upload")
 	}
 
-	// Group records by partition for efficient storage
-	partitionGroups := make(map[string][]LoanCashFlowRecord)
+	// Use current processing time for partitioning (not the data's postdate)
+	now := time.Now().UTC()
+	year := now.Year()
+	month := int(now.Month())
+	day := now.Day()
 
-	for _, record := range records {
-		// Create partition key from postDate
-		year := record.PostDate.Year()
-		month := int(record.PostDate.Month())
-		quarter := ((month - 1) / 3) + 1
+	// Create partition key using current processing time: year=2024/month=09/date=20
+	dateKey := fmt.Sprintf("year=%d/month=%02d/date=%d",
+		year,
+		month,
+		day,
+	)
 
-		// Create partition key
-		partitionKey := fmt.Sprintf("year=%d/month=%02d/quarter=Q%d/loancode=%s",
-			year,
-			month,
-			quarter,
-			record.LoanCode,
-		)
-
-		partitionGroups[partitionKey] = append(partitionGroups[partitionKey], record)
-	}
-
-	// Upload each partition group
-	for partitionKey, partitionRecords := range partitionGroups {
-		err := w.uploadPartition(ctx, partitionKey, partitionRecords, sourceFile)
-		if err != nil {
-			return fmt.Errorf("failed to upload partition %s: %w", partitionKey, err)
-		}
+	// Upload all records in a single file (one Excel file = one S3 file)
+	err := w.uploadDatePartition(ctx, dateKey, records, sourceFile)
+	if err != nil {
+		return fmt.Errorf("failed to upload file %s: %w", sourceFile, err)
 	}
 
 	return nil
 }
 
-// uploadPartition uploads records for a specific partition
-func (w *S3Writer) uploadPartition(ctx context.Context, partitionKey string, records []LoanCashFlowRecord, sourceFile string) error {
+// uploadDatePartition uploads records for a specific date (all loan codes combined)
+func (w *S3Writer) uploadDatePartition(ctx context.Context, dateKey string, records []LoanCashFlowRecord, sourceFile string) error {
 	// Create batch payload
 	batch := BatchUploadPayload{
 		Records: records,
@@ -118,29 +109,37 @@ func (w *S3Writer) uploadPartition(ctx context.Context, partitionKey string, rec
 		return fmt.Errorf("failed to compress data: %w", err)
 	}
 
-	// Generate S3 key
+	// Generate S3 key - more descriptive filename for single Excel file processing
 	timestamp := time.Now().UTC().Format("2006-01-02_150405")
-	s3Key := fmt.Sprintf("%s/%s/%s_batch_%s.json.gz",
+
+	// Extract filename without extension for cleaner naming
+	sourceFileName := sourceFile
+	if strings.HasSuffix(sourceFile, ".xlsx") {
+		sourceFileName = strings.TrimSuffix(sourceFile, ".xlsx")
+	}
+
+	s3Key := fmt.Sprintf("%s/%s/%s_%s.json.gz",
 		w.basePath,
-		partitionKey,
+		dateKey,
 		timestamp,
-		batch.Metadata.BatchID[:8], // First 8 chars of UUID
+		sourceFileName,
 	)
 
 	// Upload to S3
 	_, err = w.s3Client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:          aws.String(w.bucketName),
-		Key:             aws.String(s3Key),
-		Body:            bytes.NewReader(compressedData),
-		ContentType:     aws.String("application/json"),
-		ContentEncoding: aws.String("gzip"),
+		Bucket:             aws.String(w.bucketName),
+		Key:                aws.String(s3Key),
+		Body:               bytes.NewReader(compressedData),
+		ContentType:        aws.String("application/gzip"),
+		ContentEncoding:    aws.String("gzip"),
+		ContentDisposition: aws.String(fmt.Sprintf("attachment; filename=\"%s_%s.json.gz\"", timestamp, sourceFileName)),
 		Metadata: map[string]string{
-			"source-file":   sourceFile,
-			"record-count":  fmt.Sprintf("%d", len(records)),
-			"etl-version":   "1.0.0",
-			"processed-at":  batch.Metadata.ProcessedAt.Format(time.RFC3339),
-			"partition-key": partitionKey,
-			"checksum":      batch.Metadata.Checksum,
+			"source-file":  sourceFile,
+			"record-count": fmt.Sprintf("%d", len(records)),
+			"etl-version":  "1.0.0",
+			"processed-at": batch.Metadata.ProcessedAt.Format(time.RFC3339),
+			"date-key":     dateKey,
+			"checksum":     batch.Metadata.Checksum,
 		},
 	})
 
@@ -180,7 +179,7 @@ func ConvertDynamoItemToS3Record(item map[string]interface{}) (LoanCashFlowRecor
 	}
 
 	if postDateStr, ok := item["postdate"].(string); ok {
-		postDate, err := time.Parse("2006-01-02T15:04:05", postDateStr)
+		postDate, err := time.Parse("1/2/2006 3:04:05 PM", postDateStr)
 		if err != nil {
 			return record, fmt.Errorf("failed to parse postdate: %w", err)
 		}
@@ -204,40 +203,11 @@ func ConvertDynamoItemToS3Record(item map[string]interface{}) (LoanCashFlowRecor
 	// Extract data - ALL other fields go directly into data map
 	record.Data = make(map[string]interface{})
 
-	// Process all fields except core identifiers
+	// Process all fields
 	for key, value := range item {
-		// Skip core identifier fields and composite keys
-		if key == "loancode" || key == "postdate" || key == "maxHmy" ||
-			strings.Contains(key, "#") { // Skip composite keys
-			continue
-		}
-
-		// All other fields go directly into data map
 		record.Data[key] = value
 	}
-
-	// Set search fields - simplified (can be added back later if needed)
-	// record.SearchFields.LoanCodeLower = strings.ToLower(record.LoanCode)
-
-	// No need to populate partition fields - they're calculated on demand
-
 	return record, nil
-}
-
-// Helper function to parse various numeric types to float64
-func parseFloat64ToString(value interface{}) (float64, error) {
-	switch v := value.(type) {
-	case string:
-		return parseFloat64(v)
-	case float64:
-		return v, nil
-	case int:
-		return float64(v), nil
-	case int64:
-		return float64(v), nil
-	default:
-		return 0, fmt.Errorf("cannot convert %T to float64", value)
-	}
 }
 
 func parseFloat64(s string) (float64, error) {
@@ -273,11 +243,8 @@ func (q *QueryHelper) ListPartitions(ctx context.Context, filters map[string]str
 		prefix += fmt.Sprintf("year=%s/", year)
 		if month, ok := filters["month"]; ok {
 			prefix += fmt.Sprintf("month=%s/", month)
-			if quarter, ok := filters["quarter"]; ok {
-				prefix += fmt.Sprintf("quarter=%s/", quarter)
-				if loanCode, ok := filters["loancode"]; ok {
-					prefix += fmt.Sprintf("loancode=%s/", loanCode)
-				}
+			if date, ok := filters["date"]; ok {
+				prefix += fmt.Sprintf("date=%s/", date)
 			}
 		}
 	}
@@ -303,8 +270,10 @@ func (q *QueryHelper) ListPartitions(ctx context.Context, filters map[string]str
 // Example usage for your ETL integration:
 /*
 func integrateS3Upload(ctx context.Context, s3Client *s3.Client, records []LoanCashFlowRecord) error {
-	s3Writer := NewS3Writer(s3Client, "your-s3-bucket", "loan-cashflow")
+	s3Writer := NewS3Writer(s3Client, "mavik-powerbi-analytics-data", "loan-cashflow")
 
+	// This will save all records from one Excel file in a single S3 file using current processing time:
+	// s3://mavik-powerbi-analytics-data/loan-cashflow/year=2024/month=09/date=20/2024-09-20_143022_YDC-Response-LoanCashFlow-Camden-Only.json.gz
 	return s3Writer.UploadBatch(ctx, records, "YDC-Response-LoanCashFlow-Camden-Only.xlsx")
 }
 */

@@ -26,18 +26,18 @@ type LoanCashFlowRecord struct {
 
 // S3StorageStructure defines how data should be organized in S3 for optimal querying
 type S3StorageStructure struct {
-	// Hierarchical partitioning scheme for efficient querying
-	// s3://bucket/loan-cashflow/year=2024/month=09/quarter=Q3/day=20/loancode=ABC123/records.json
+	// Hierarchical partitioning scheme based on processing time
+	// s3://bucket/loan-cashflow/year=2024/month=09/date=20/processed-file.json
 
 	BucketName string `json:"bucketName"`
 	BasePath   string `json:"basePath"` // e.g., "loan-cashflow"
 
-	// Partitioning strategy
-	PartitionBy []string `json:"partitionBy"` // ["year", "month", "quarter", "day", "loancode"]
+	// Partitioning strategy based on processing time (not data time)
+	PartitionBy []string `json:"partitionBy"` // ["year", "month", "date"]
 
-	// File organization
+	// File organization - one Excel file = one S3 file
 	FileStrategy struct {
-		MaxRecordsPerFile int    `json:"maxRecordsPerFile"` // e.g., 1000 records per JSON file
+		MaxRecordsPerFile int    `json:"maxRecordsPerFile"` // e.g., all records from one Excel file
 		CompressionType   string `json:"compressionType"`   // "gzip" recommended
 		FileFormat        string `json:"fileFormat"`        // "json" or "jsonl" (JSON Lines)
 	} `json:"fileStrategy"`
@@ -59,20 +59,20 @@ type BatchUploadPayload struct {
 
 // S3 Key Generation Functions
 func GenerateS3Key(record LoanCashFlowRecord, basePath string) string {
-	// Extract partition values from postDate
-	year := record.PostDate.Year()
-	month := int(record.PostDate.Month())
-	quarter := ((month - 1) / 3) + 1
+	// Use current processing time for partitioning (not the data's postdate)
+	now := time.Now().UTC()
+	year := now.Year()
+	month := int(now.Month())
+	day := now.Day()
 
-	// Example: loan-cashflow/year=2024/month=09/quarter=Q3/loancode=ABC123/2024-09-20_batch_001.json
-	return fmt.Sprintf("%s/year=%d/month=%02d/quarter=Q%d/loancode=%s/%s_%s.json",
+	// Example: loan-cashflow/year=2024/month=09/date=20/2024-09-20_143022_filename.json
+	return fmt.Sprintf("%s/year=%d/month=%02d/date=%d/%s_%s.json",
 		basePath,
 		year,
 		month,
-		quarter,
-		record.LoanCode,
-		record.PostDate.Format("2006-01-02"),
-		record.ETL.ProcessedAt.Format("150405"), // HHMMSS
+		day,
+		now.Format("2006-01-02_150405"),
+		"processed-data", // Generic filename since we process entire files
 	)
 }
 
