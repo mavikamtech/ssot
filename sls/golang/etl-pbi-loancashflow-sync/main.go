@@ -177,7 +177,7 @@ func Handler(ctx context.Context) error {
 			continue // Skip rows without the required key fields
 		}
 
-		dynamoutils.InsertItemWithRetry(ctx, dynamoClient, tableName, item, 3)
+		err := dynamoutils.InsertItemWithRetry(ctx, dynamoClient, tableName, item, 3)
 
 		if err != nil {
 			log.Printf("DynamoDB insert failed for row %d: %v", rowIdx, err)
