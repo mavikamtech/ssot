@@ -208,19 +208,7 @@ func Handler(ctx context.Context) error {
 
 			// Parse the value and include nulls for S3
 			attrValue := dynamoutils.ParseValue(cellValue)
-			switch v := attrValue.(type) {
-			case *types.AttributeValueMemberS:
-				itemForS3[header] = v.Value
-			case *types.AttributeValueMemberN:
-				itemForS3[header] = v.Value
-			case *types.AttributeValueMemberBOOL:
-				itemForS3[header] = v.Value
-			case *types.AttributeValueMemberNULL:
-				// Include null values for S3
-				itemForS3[header] = nil
-			default:
-				itemForS3[header] = fmt.Sprintf("%v", v)
-			}
+			itemForS3[header] = convertDynamoAttributeToInterface(attrValue)
 		}
 
 		// Then add the computed fields from DynamoDB item (no nulls here)
@@ -230,18 +218,8 @@ func Handler(ctx context.Context) error {
 				continue
 			}
 
-			// Convert DynamoDB AttributeValue to regular interface{}
-			switch v := val.(type) {
-			case *types.AttributeValueMemberS:
-				itemForS3[key] = v.Value
-			case *types.AttributeValueMemberN:
-				itemForS3[key] = v.Value
-			case *types.AttributeValueMemberBOOL:
-				itemForS3[key] = v.Value
-			default:
-				// For other types, convert to string
-				itemForS3[key] = fmt.Sprintf("%v", v)
-			}
+			// Convert DynamoDB AttributeValue to regular interface{} using shared utility
+			itemForS3[key] = convertDynamoAttributeToInterface(val)
 		}
 
 		// Convert to S3 record and add to collection

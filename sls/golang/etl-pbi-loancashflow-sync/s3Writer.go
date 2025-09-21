@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
@@ -214,6 +215,23 @@ func parseFloat64(s string) (float64, error) {
 	// Remove commas and parse
 	cleanStr := strings.ReplaceAll(strings.TrimSpace(s), ",", "")
 	return strconv.ParseFloat(cleanStr, 64)
+}
+
+// convertDynamoAttributeToInterface converts a DynamoDB AttributeValue to a regular interface{}
+func convertDynamoAttributeToInterface(val interface{}) interface{} {
+	switch v := val.(type) {
+	case *types.AttributeValueMemberS:
+		return v.Value
+	case *types.AttributeValueMemberN:
+		return v.Value
+	case *types.AttributeValueMemberBOOL:
+		return v.Value
+	case *types.AttributeValueMemberNULL:
+		return nil
+	default:
+		// For other types, convert to string
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 // QueryHelper provides utilities for querying the S3 data structure
