@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -87,21 +86,12 @@ func (w *S3Writer) uploadDatePartition(ctx context.Context, dateKey string, reco
 	batch.Metadata.SourceFile = sourceFile
 	batch.Metadata.RecordCount = len(records)
 	batch.Metadata.ETLVersion = "1.0.0"
+	// TODO: Add checksum calculation in a separate task for data integrity verification
 
-	// Serialize to JSON
+	// Serialize complete batch to JSON
 	jsonData, err := json.MarshalIndent(batch, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
-	}
-
-	// Calculate checksum using SHA-256
-	hash := sha256.Sum256(jsonData)
-	batch.Metadata.Checksum = fmt.Sprintf("%x", hash)
-
-	// Re-serialize with checksum
-	jsonData, err = json.MarshalIndent(batch, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal JSON with checksum: %w", err)
 	}
 
 	// Compress data
@@ -140,7 +130,6 @@ func (w *S3Writer) uploadDatePartition(ctx context.Context, dateKey string, reco
 			"etl-version":  "1.0.0",
 			"processed-at": batch.Metadata.ProcessedAt.Format(time.RFC3339),
 			"date-key":     dateKey,
-			"checksum":     batch.Metadata.Checksum,
 		},
 	})
 
