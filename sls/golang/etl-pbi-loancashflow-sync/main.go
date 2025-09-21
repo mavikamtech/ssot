@@ -24,7 +24,6 @@ var (
 	tableName = os.Getenv("DYNAMO_TABLE_NAME")
 )
 
-// Lambda Handler
 func Handler(ctx context.Context) error {
 	awscfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
 	if err != nil {
@@ -33,7 +32,6 @@ func Handler(ctx context.Context) error {
 	dynamoClient := dynamodb.NewFromConfig(awscfg)
 	s3Client := s3.NewFromConfig(awscfg)
 
-	// Initialize S3 writer for saving processed data
 	s3Writer := NewS3Writer(s3Client, "mavik-powerbi-analytics-data", "loan-cashflow")
 
 	bucket := "loancashflow-sync-excel"
@@ -81,7 +79,6 @@ func Handler(ctx context.Context) error {
 		headers[i] = utils.ToCamelCase(header)
 	}
 
-	// Find column indices for postdate and maxHmy
 	postdateColIdx := -1
 	maxHmyColIdx := -1
 	loancodeColIdx := -1
@@ -95,7 +92,6 @@ func Handler(ctx context.Context) error {
 		}
 	}
 
-	// Collect all processed records for S3 upload
 	var s3Records []LoanCashFlowRecord
 
 	for rowIdx := 1; rowIdx < len(rows); rowIdx++ {
@@ -108,12 +104,11 @@ func Handler(ctx context.Context) error {
 		item := map[string]types.AttributeValue{}
 		hasData := false
 
-		// Track postdate and maxHmy values
 		var postdate, maxHmy, loancode string
 
 		for colIdx, cellValue := range row {
 			if colIdx >= len(headers) || headers[colIdx] == "" {
-				continue // Skip columns without headers
+				continue
 			}
 
 			attrValue := dynamoutils.ParseValue(cellValue)
@@ -122,19 +117,15 @@ func Handler(ctx context.Context) error {
 				continue
 			}
 
-			// Save postdate and maxHmy values if found
 			switch colIdx {
 			case postdateColIdx:
 				if sv, ok := attrValue.(*types.AttributeValueMemberS); ok {
-					// Parse the date and convert to ISO8601 format
 					dateStr := sv.Value
-					layout := "1/2/2006 3:04:05 PM" // Go time layout: month/day/year hour:minute:second AM/PM
+					layout := "1/2/2006 3:04:05 PM"
 					t, err := time.Parse(layout, dateStr)
 					if err == nil {
-						// Successfully parsed, convert to ISO8601 format
 						postdate = t.Format("2006-01-02T15:04:05")
 					} else {
-						// If parsing fails, use the original value
 						log.Printf("Warning: could not parse date '%s': %v", dateStr, err)
 						postdate = dateStr
 					}
@@ -159,7 +150,6 @@ func Handler(ctx context.Context) error {
 			continue
 		}
 
-		// Set postdate and maxHmy attributes explicitly
 		if postdateColIdx != -1 {
 			item["postdate"] = &types.AttributeValueMemberS{Value: postdate}
 		}
@@ -170,17 +160,15 @@ func Handler(ctx context.Context) error {
 			item["loancode"] = &types.AttributeValueMemberS{Value: loancode}
 		}
 
-		// Add the required composite key field
 		if postdate != "" && maxHmy != "" {
 			compositeKey := fmt.Sprintf("%s#%s", postdate, maxHmy)
 			item["postdate#maxHmy"] = &types.AttributeValueMemberS{Value: compositeKey}
 
-			// Add a loancode#shardId field with random shardId from 0-9
-			shardId := dynamoutils.GenerateRandomShardId(10) // Random number between 0 and 9
+			shardId := dynamoutils.GenerateRandomShardId(10)
 			item["loancode#shardId"] = &types.AttributeValueMemberS{Value: fmt.Sprintf("%s#%d", loancode, shardId)}
 		} else {
 			log.Printf("Skipping row %d: missing required postdate or maxHmy values", rowIdx)
-			continue // Skip rows without the required key fields
+			continue
 		}
 
 		err := dynamoutils.InsertItemWithRetry(ctx, dynamoClient, tableName, item, 3)
@@ -191,38 +179,30 @@ func Handler(ctx context.Context) error {
 			log.Printf("✅ Inserted row %d into DynamoDB", rowIdx)
 		}
 
-		// Convert DynamoDB item to S3 record format
 		itemForS3 := make(map[string]interface{})
 
-		// First, process ALL Excel fields (including nulls) for S3
 		for colIdx, header := range headers {
 			if header == "" {
-				continue // Skip columns without headers
+				continue
 			}
 
-			// Get the cell value for this column in this row
 			var cellValue string
 			if colIdx < len(row) {
 				cellValue = row[colIdx]
 			}
 
-			// Parse the value and include nulls for S3
 			attrValue := dynamoutils.ParseValue(cellValue)
 			itemForS3[header] = convertDynamoAttributeToInterface(attrValue)
 		}
 
-		// Then add the computed fields from DynamoDB item (no nulls here)
 		for key, val := range item {
-			// Skip if already added from Excel headers
 			if _, exists := itemForS3[key]; exists {
 				continue
 			}
 
-			// Convert DynamoDB AttributeValue to regular interface{} using shared utility
 			itemForS3[key] = convertDynamoAttributeToInterface(val)
 		}
 
-		// Convert to S3 record and add to collection
 		s3Record, err := ConvertDynamoItemToS3Record(itemForS3)
 		if err != nil {
 			log.Printf("Failed to convert row %d to S3 record: %v", rowIdx, err)
@@ -231,7 +211,6 @@ func Handler(ctx context.Context) error {
 		}
 	}
 
-	// Upload all processed records to S3
 	if len(s3Records) > 0 {
 		log.Printf("Uploading %d records to S3...", len(s3Records))
 		err := s3Writer.UploadBatch(ctx, s3Records, key)
@@ -248,7 +227,6 @@ func Handler(ctx context.Context) error {
 }
 
 func main() {
-	// Seed the random number generator
 	rand.Seed(time.Now().UnixNano())
 	lambda.Start(Handler)
 }
