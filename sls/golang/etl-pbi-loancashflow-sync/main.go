@@ -6,10 +6,10 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"strconv"
+	"ssot/pkg/dynamoutils"
+	"ssot/pkg/utils"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/aws/aws-lambda-go/lambda"
 
@@ -75,7 +75,7 @@ func Handler(ctx context.Context) error {
 	headerRow := rows[0]
 	headers := make([]string, len(headerRow))
 	for i, header := range headerRow {
-		headers[i] = toCamelCase(header)
+		headers[i] = utils.ToCamelCase(header)
 	}
 
 	// Find column indices for postdate and maxHmy
@@ -110,7 +110,7 @@ func Handler(ctx context.Context) error {
 				continue // Skip columns without headers
 			}
 
-			attrValue := parseValue(cellValue)
+			attrValue := dynamoutils.ParseValue(cellValue)
 
 			if _, isNull := attrValue.(*types.AttributeValueMemberNULL); isNull {
 				continue
@@ -170,17 +170,14 @@ func Handler(ctx context.Context) error {
 			item["postdate#maxHmy"] = &types.AttributeValueMemberS{Value: compositeKey}
 
 			// Add a loancode#shardId field with random shardId from 0-9
-			shardId := rand.Intn(10) // Random number between 0 and 9
+			shardId := dynamoutils.GenerateRandomShardId(10) // Random number between 0 and 9
 			item["loancode#shardId"] = &types.AttributeValueMemberS{Value: fmt.Sprintf("%s#%d", loancode, shardId)}
 		} else {
 			log.Printf("Skipping row %d: missing required postdate or maxHmy values", rowIdx)
 			continue // Skip rows without the required key fields
 		}
 
-		_, err = dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
-			TableName: &tableName,
-			Item:      item,
-		})
+		dynamoutils.InsertItemWithRetry(ctx, dynamoClient, tableName, item, 3)
 
 		if err != nil {
 			log.Printf("DynamoDB insert failed for row %d: %v", rowIdx, err)
@@ -196,66 +193,4 @@ func main() {
 	// Seed the random number generator
 	rand.Seed(time.Now().UnixNano())
 	lambda.Start(Handler)
-}
-
-// Converts header names to camelCase for DynamoDB attribute names
-func toCamelCase(s string) string {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return ""
-	}
-
-	words := strings.Fields(strings.ReplaceAll(s, "_", " "))
-	if len(words) == 0 {
-		return ""
-	}
-
-	result := strings.ToLower(words[0])
-	for _, w := range words[1:] {
-		if w == "" {
-			continue
-		}
-		runes := []rune(strings.ToLower(w))
-		if len(runes) == 0 {
-			continue
-		}
-		runes[0] = unicode.ToUpper(runes[0])
-		result += string(runes)
-	}
-
-	return result
-}
-
-// Determines the appropriate DynamoDB attribute type for a value
-func parseValue(val string) types.AttributeValue {
-	// Clean up the value
-	trimmedVal := strings.TrimSpace(val)
-	if trimmedVal == "" {
-		return &types.AttributeValueMemberNULL{Value: true}
-	}
-
-	// Remove commas for number parsing
-	numVal := strings.ReplaceAll(trimmedVal, ",", "")
-
-	// Try to parse as integer first
-	if intVal, err := strconv.ParseInt(numVal, 10, 64); err == nil {
-		return &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", intVal)}
-	}
-
-	// If not integer, try to parse as float
-	if floatVal, err := strconv.ParseFloat(numVal, 64); err == nil {
-		return &types.AttributeValueMemberN{Value: fmt.Sprintf("%g", floatVal)}
-	}
-
-	// Try to parse as boolean
-	lowerVal := strings.ToLower(trimmedVal)
-	switch lowerVal {
-	case "true", "yes":
-		return &types.AttributeValueMemberBOOL{Value: true}
-	case "false", "no":
-		return &types.AttributeValueMemberBOOL{Value: false}
-	}
-
-	// Otherwise, treat as string
-	return &types.AttributeValueMemberS{Value: trimmedVal}
 }
