@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -93,8 +93,8 @@ func (w *S3Writer) uploadDatePartition(ctx context.Context, dateKey string, reco
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	// Calculate checksum
-	hash := md5.Sum(jsonData)
+	// Calculate checksum using SHA-256
+	hash := sha256.Sum256(jsonData)
 	batch.Metadata.Checksum = fmt.Sprintf("%x", hash)
 
 	// Re-serialize with checksum
