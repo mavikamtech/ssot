@@ -24,6 +24,13 @@ var (
 	tableName = os.Getenv("DYNAMO_TABLE_NAME")
 )
 
+// renameCamdenToProject renames Camden references to Project-A in cell values
+func renameCamdenToProject(cellValue string) string {
+	// Replace all instances of Camden with Project-A
+	cellValue = strings.ReplaceAll(cellValue, "Camden", "Project-A")
+	return cellValue
+}
+
 func Handler(ctx context.Context) error {
 	awscfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
 	if err != nil {
@@ -111,6 +118,9 @@ func Handler(ctx context.Context) error {
 				continue
 			}
 
+			// Apply Camden to Project-A renaming transformation
+			cellValue = renameCamdenToProject(cellValue)
+
 			attrValue := dynamoutils.ParseValue(cellValue)
 
 			if _, isNull := attrValue.(*types.AttributeValueMemberNULL); isNull {
@@ -190,6 +200,9 @@ func Handler(ctx context.Context) error {
 			if colIdx < len(row) {
 				cellValue = row[colIdx]
 			}
+
+			// Apply Camden to Project-A renaming transformation
+			cellValue = renameCamdenToProject(cellValue)
 
 			attrValue := dynamoutils.ParseValue(cellValue)
 			itemForS3[header] = convertDynamoAttributeToInterface(attrValue)
