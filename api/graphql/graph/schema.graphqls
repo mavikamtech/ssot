@@ -1,0 +1,28 @@
+
+type LoanCashFlow {
+  loanCode: String!
+  maxHmy: String
+  balance: Float
+  commitment: Float
+  ebalance: Float
+  glPerioddate: String
+  interest: Float
+  leverageActivity: Float
+  leverageBalance: Float
+  leverageInterest: Float
+  loandesc: String
+  periodend: String
+  postdate: String
+  propertycode: String
+  propertyname: String
+  sbalance: Float
+  status: String
+}
+
+type LoanCashFlows {
+  byLoanCode(loanCode: String!): [LoanCashFlow!]!
+}
+
+type Query {
+  loanCashFlow: LoanCashFlows!
+}
