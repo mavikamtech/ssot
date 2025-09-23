@@ -144,7 +144,7 @@ models:
   # The GraphQL spec explicitly states that the Int type is a signed 32-bit
   # integer. Using Go int or int64 to represent it can lead to unexpected
   # behavior, and some GraphQL tools like Apollo Router will fail when
-  # communicating numbers that overflow 32-bits.
+  # communicating numbers that overflow 32-bit.
   #
   # You may choose to use the custom, built-in Int64 scalar to represent 64-bit
   # integers, or ignore the spec and bind Int to graphql.Int / graphql.Int64
@@ -157,3 +157,8 @@ models:
     model:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
+
+  LoanCashFlows:
+    fields:
+      byLoanCode:
+        resolver: true

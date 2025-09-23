@@ -6,16 +6,21 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"ssot/api/graphql/graph/model"
 )
 
+func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode string) ([]*model.LoanCashFlow, error) {
+	return r.ServiceManager.LoanCashFlowService.GetByLoanCode(ctx, loanCode)
+}
+
 // LoanCashFlow is the resolver for the loanCashFlow field.
 func (r *queryResolver) LoanCashFlow(ctx context.Context) (*model.LoanCashFlows, error) {
-	panic(fmt.Errorf("not implemented: LoanCashFlow - loanCashFlow"))
+	return &model.LoanCashFlows{}, nil
 }
+func (r *Resolver) LoanCashFlows() LoanCashFlowsResolver { return &loanCashFlowsResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type loanCashFlowsResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

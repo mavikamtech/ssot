@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	LoanCashFlows() LoanCashFlowsResolver
 	Query() QueryResolver
 }
 
@@ -75,6 +76,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type LoanCashFlowsResolver interface {
+	ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode string) ([]*model.LoanCashFlow, error)
+}
 type QueryResolver interface {
 	LoanCashFlow(ctx context.Context) (*model.LoanCashFlows, error)
 }
@@ -902,7 +906,8 @@ func (ec *executionContext) _LoanCashFlows_byLoanCode(ctx context.Context, field
 		field,
 		ec.fieldContext_LoanCashFlows_byLoanCode,
 		func(ctx context.Context) (any, error) {
-			return obj.ByLoanCode, nil
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.LoanCashFlows().ByLoanCode(ctx, obj, fc.Args["loanCode"].(string))
 		},
 		nil,
 		ec.marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ,
@@ -915,8 +920,8 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlows",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "loanCode":
@@ -2649,10 +2654,41 @@ func (ec *executionContext) _LoanCashFlows(ctx context.Context, sel ast.Selectio
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LoanCashFlows")
 		case "byLoanCode":
-			out.Values[i] = ec._LoanCashFlows_byLoanCode(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LoanCashFlows_byLoanCode(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -4,4 +4,10 @@ package graph
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
-type Resolver struct{}
+import (
+	"ssot/api/graphql/internal/services"
+)
+
+type Resolver struct {
+	ServiceManager *services.ServiceManager
+}
