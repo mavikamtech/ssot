@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"ssot/api/graphql/graph/model"
+	"ssot/gql/graphql/graph/model"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"

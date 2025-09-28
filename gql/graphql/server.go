@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"ssot/api/graphql/graph"
-	"ssot/api/graphql/internal/services"
+	"ssot/gql/graphql/graph"
+	"ssot/gql/graphql/internal/services"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"

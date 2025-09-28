@@ -3,7 +3,7 @@ package services
 import (
 	"os"
 
-	"ssot/api/graphql/graph/services"
+	"ssot/gql/graphql/graph/services"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )

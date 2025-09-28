@@ -6,7 +6,7 @@ package graph
 
 import (
 	"context"
-	"ssot/api/graphql/graph/model"
+	"ssot/gql/graphql/graph/model"
 )
 
 func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode string) ([]*model.LoanCashFlow, error) {

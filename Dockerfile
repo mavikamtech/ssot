@@ -1,18 +1,24 @@
-# ---------- Build Stage ----------
-FROM golang:1.22-alpine AS builder
+# ---------- Step 1: Build ----------
+FROM golang:1.25-alpine AS builder
+
+RUN apk add --no-cache git
 
 WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
 
-# 编译 gql 二进制，入口是 gql/graphql/server.go
-RUN go build -o gql ./gql/graphql/server.go
+RUN go build -o server ./gql/graphql/server.go
 
-# ---------- Run Stage ----------
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
+# ---------- Step 2: Runtime ----------
+FROM alpine:3.19
 
 WORKDIR /app
-COPY --from=builder /app/gql .
 
-# 容器启动命令
-CMD ["./gql"]
+COPY --from=builder /app/server .
+
+EXPOSE 8080
+
+CMD ["./server"]

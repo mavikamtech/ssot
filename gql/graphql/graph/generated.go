@@ -8,7 +8,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"ssot/api/graphql/graph/model"
+	"ssot/gql/graphql/graph/model"
 	"strconv"
 	"sync"
 	"sync/atomic"
