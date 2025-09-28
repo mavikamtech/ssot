@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"ssot/gql/graphql/graph"
+	"ssot/gql/graphql/internal/auth"
 	"ssot/gql/graphql/internal/services"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -54,10 +55,32 @@ func main() {
 		Cache: lru.New[string](100),
 	})
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	// Setup routes
+	mux := http.NewServeMux()
+
+	// Health check endpoint
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	// Authentication endpoints (no auth required)
+	// mux.HandleFunc("/auth/login", auth.LoginHandler)
+	// mux.HandleFunc("/auth/register", auth.CreateUserHandler)
+
+	// GraphQL playground
+	mux.Handle("/", playground.Handler("GraphQL playground", "/query"))
+
+	// GraphQL endpoint with authentication middleware
+	mux.Handle("/query", auth.Middleware(srv))
 
 	log.Printf("starting the server at :%s for GraphQL", port)
 	log.Printf("using DynamoDB loan cash flow table: %s", serviceConfig.LoanCashFlowTableName)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	// log.Printf("Authentication endpoints:")
+	// log.Printf("  POST /auth/login - Login with email/password")
+	// log.Printf("  POST /auth/register - Register new user")
+	log.Printf("  GET / - GraphQL playground")
+	log.Printf("  POST /query - GraphQL API (requires JWT token)")
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }

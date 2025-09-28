@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/99designs/gqlgen v0.17.80
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/vektah/gqlparser/v2 v2.5.30
 	github.com/xuri/excelize/v2 v2.9.1
 )
@@ -54,7 +55,7 @@ require (
 	github.com/tiendc/go-deepcopy v1.6.0 // indirect
 	github.com/xuri/efp v0.0.1 // indirect
 	github.com/xuri/nfp v0.0.1 // indirect
-	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/crypto v0.42.0
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )
