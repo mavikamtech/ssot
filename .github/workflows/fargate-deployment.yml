@@ -9,15 +9,14 @@ on:
       - "go.mod"
       - "go.sum"
       - "Dockerfile"
-      - "ecs-task-def.json"
   workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: ssot-gql
   ECS_SERVICE: ssot-gql-service
-  ECS_CLUSTER: ssot-cluster
-  ECS_TASK_DEFINITION: ecs-task-def.json
+  ECS_CLUSTER: arn:aws:ecs:us-east-1:167067248318:cluster/ssot-cluster
+  TASK_FAMILY: ssot-gql-task
   CONTAINER_NAME: ssot-gql
 
 jobs:
@@ -55,36 +54,198 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: ${{ env.ECS_TASK_DEFINITION }}
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ steps.build-image.outputs.image }}
+    - name: Get existing task definition
+      id: get-task-def
+      run: |
+        # Get the current task definition
+        TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].taskDefinition' --output text 2>/dev/null || echo "")
+        
+        if [ "$TASK_DEF_ARN" = "" ] || [ "$TASK_DEF_ARN" = "None" ]; then
+          echo "No existing service found. Creating new task definition..."
+          
+          # Get default VPC and subnets for network configuration
+          DEFAULT_VPC=$(aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query 'Vpcs[0].VpcId' --output text 2>/dev/null || echo "")
+          if [ "$DEFAULT_VPC" != "" ] && [ "$DEFAULT_VPC" != "None" ]; then
+            SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$DEFAULT_VPC" --query 'Subnets[*].SubnetId' --output text | tr '\t' ',' | head -c -1)
+            DEFAULT_SG=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=$DEFAULT_VPC" "Name=group-name,Values=default" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
+          else
+            # Fallback: get any available subnet and security group
+            SUBNET_IDS=$(aws ec2 describe-subnets --query 'Subnets[0].SubnetId' --output text 2>/dev/null || echo "")
+            DEFAULT_SG=$(aws ec2 describe-security-groups --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
+          fi
+          
+          echo "subnet-ids=$SUBNET_IDS" >> $GITHUB_OUTPUT
+          echo "security-group=$DEFAULT_SG" >> $GITHUB_OUTPUT
+          
+          # Create a new task definition JSON
+          cat > task-definition.json << EOF
+        {
+          "family": "${{ env.TASK_FAMILY }}",
+          "networkMode": "awsvpc",
+          "requiresCompatibilities": ["FARGATE"],
+          "cpu": "256",
+          "memory": "512",
+          "executionRoleArn": "arn:aws:iam::167067248318:role/ecsTaskExecutionRole",
+          "taskRoleArn": "arn:aws:iam::167067248318:role/ecsTaskRole",
+          "containerDefinitions": [
+            {
+              "name": "${{ env.CONTAINER_NAME }}",
+              "image": "${{ steps.build-image.outputs.image }}",
+              "portMappings": [
+                {
+                  "containerPort": 8080,
+                  "protocol": "tcp"
+                }
+              ],
+              "essential": true,
+              "environment": [
+                {
+                  "name": "PORT",
+                  "value": "8080"
+                },
+                {
+                  "name": "AWS_REGION",
+                  "value": "${{ env.AWS_REGION }}"
+                }
+              ],
+              "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                  "awslogs-group": "/ecs/${{ env.TASK_FAMILY }}",
+                  "awslogs-region": "${{ env.AWS_REGION }}",
+                  "awslogs-stream-prefix": "ecs"
+                }
+              },
+              "healthCheck": {
+                "command": [
+                  "CMD-SHELL",
+                  "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"
+                ],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 60
+              }
+            }
+          ]
+        }
+        EOF
+        else
+          echo "Using existing task definition: $TASK_DEF_ARN"
+          aws ecs describe-task-definition --task-definition $TASK_DEF_ARN --query 'taskDefinition' > task-definition.json
+          
+          # Get existing network configuration from service
+          EXISTING_CONFIG=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json 2>/dev/null || echo "{}")
+          SUBNET_IDS=$(echo $EXISTING_CONFIG | jq -r '.subnets[]' 2>/dev/null | tr '\n' ',' | head -c -1 || echo "")
+          DEFAULT_SG=$(echo $EXISTING_CONFIG | jq -r '.securityGroups[0]' 2>/dev/null || echo "")
+          
+          echo "subnet-ids=$SUBNET_IDS" >> $GITHUB_OUTPUT
+          echo "security-group=$DEFAULT_SG" >> $GITHUB_OUTPUT
+          
+          # Remove read-only fields
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' task-definition.json > temp.json && mv temp.json task-definition.json
+          
+          # Update the image
+          jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' task-definition.json > temp.json && mv temp.json task-definition.json
+        fi
 
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
+    - name: Create CloudWatch log group if not exists
+      run: |
+        aws logs create-log-group --log-group-name "/ecs/${{ env.TASK_FAMILY }}" --region ${{ env.AWS_REGION }} || true
+
+    - name: Register new task definition
+      id: register-task-def
+      run: |
+        TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://task-definition.json --query 'taskDefinition.taskDefinitionArn' --output text)
+        echo "task-definition-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+
+    - name: Update ECS service
+      run: |
+        # Check if service exists
+        SERVICE_EXISTS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[?status==`ACTIVE`]' --output text 2>/dev/null || echo "")
+        
+        if [ "$SERVICE_EXISTS" = "" ]; then
+          echo "Creating new ECS service..."
+          
+          # Prepare subnet array for AWS CLI
+          SUBNET_ARRAY=""
+          if [ "${{ steps.get-task-def.outputs.subnet-ids }}" != "" ]; then
+            IFS=',' read -ra SUBNETS <<< "${{ steps.get-task-def.outputs.subnet-ids }}"
+            for subnet in "${SUBNETS[@]}"; do
+              if [ "$SUBNET_ARRAY" = "" ]; then
+                SUBNET_ARRAY="$subnet"
+              else
+                SUBNET_ARRAY="$SUBNET_ARRAY,$subnet"
+              fi
+            done
+          fi
+          
+          # Create network configuration
+          NETWORK_CONFIG="awsvpcConfiguration={subnets=[$SUBNET_ARRAY],assignPublicIp=ENABLED}"
+          if [ "${{ steps.get-task-def.outputs.security-group }}" != "" ]; then
+            NETWORK_CONFIG="awsvpcConfiguration={subnets=[$SUBNET_ARRAY],securityGroups=[${{ steps.get-task-def.outputs.security-group }}],assignPublicIp=ENABLED}"
+          fi
+          
+          aws ecs create-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service-name ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ steps.register-task-def.outputs.task-definition-arn }} \
+            --desired-count 1 \
+            --launch-type FARGATE \
+            --network-configuration "$NETWORK_CONFIG" \
+            --enable-execute-command
+        else
+          echo "Updating existing ECS service..."
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ steps.register-task-def.outputs.task-definition-arn }}
+        fi
+
+    - name: Wait for service stability
+      run: |
+        echo "Waiting for service to reach steady state..."
+        aws ecs wait services-stable --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }}
 
     - name: Get service URL
       run: |
-        # Get the load balancer URL for the service
-        SERVICE_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].serviceArn' --output text)
-        LOAD_BALANCER_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].loadBalancers[0].targetGroupArn' --output text)
+        # Get the service details
+        SERVICE_INFO=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0]' --output json 2>/dev/null || echo "{}")
         
-        if [ "$LOAD_BALANCER_ARN" != "None" ] && [ "$LOAD_BALANCER_ARN" != "" ]; then
-          LB_ARN=$(aws elbv2 describe-target-groups --target-group-arns $LOAD_BALANCER_ARN --query 'TargetGroups[0].LoadBalancerArns[0]' --output text)
-          LB_DNS=$(aws elbv2 describe-load-balancers --load-balancer-arns $LB_ARN --query 'LoadBalancers[0].DNSName' --output text)
-          echo "🚀 Service deployed successfully!"
-          echo "📍 GraphQL Playground: http://$LB_DNS"
-          echo "📍 GraphQL API: http://$LB_DNS/query"
-          echo "📍 Health Check: http://$LB_DNS/health"
-        else
+        # Check if service has load balancer
+        LOAD_BALANCER_ARN=$(echo $SERVICE_INFO | jq -r '.loadBalancers[0].targetGroupArn // empty' 2>/dev/null || echo "")
+        
+        if [ "$LOAD_BALANCER_ARN" != "" ] && [ "$LOAD_BALANCER_ARN" != "null" ]; then
+          LB_ARN=$(aws elbv2 describe-target-groups --target-group-arns $LOAD_BALANCER_ARN --query 'TargetGroups[0].LoadBalancerArns[0]' --output text 2>/dev/null || echo "")
+          if [ "$LB_ARN" != "" ] && [ "$LB_ARN" != "None" ]; then
+            LB_DNS=$(aws elbv2 describe-load-balancers --load-balancer-arns $LB_ARN --query 'LoadBalancers[0].DNSName' --output text 2>/dev/null || echo "")
+            if [ "$LB_DNS" != "" ]; then
+              echo "🚀 Service deployed successfully!"
+              echo "📍 GraphQL Playground: http://$LB_DNS"
+              echo "📍 GraphQL API: http://$LB_DNS/query"
+              echo "📍 Health Check: http://$LB_DNS/health"
+            fi
+          fi
+        fi
+        
+        # Get task public IP if no load balancer
+        TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.ECS_CLUSTER }} --service-name ${{ env.ECS_SERVICE }} --query 'taskArns[0]' --output text 2>/dev/null || echo "")
+        if [ "$TASK_ARN" != "" ] && [ "$TASK_ARN" != "None" ]; then
+          PUBLIC_IP=$(aws ecs describe-tasks --cluster ${{ env.ECS_CLUSTER }} --tasks $TASK_ARN --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text 2>/dev/null || echo "")
+          if [ "$PUBLIC_IP" != "" ]; then
+            ENI_ID=$PUBLIC_IP
+            PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID --query 'NetworkInterfaces[0].Association.PublicIp' --output text 2>/dev/null || echo "")
+            if [ "$PUBLIC_IP" != "" ] && [ "$PUBLIC_IP" != "None" ]; then
+              echo "✅ Service deployed successfully!"
+              echo "📍 Direct Access: http://$PUBLIC_IP:8080"
+              echo "📍 GraphQL Playground: http://$PUBLIC_IP:8080"
+              echo "📍 GraphQL API: http://$PUBLIC_IP:8080/query"
+              echo "📍 Health Check: http://$PUBLIC_IP:8080/health"
+            fi
+          fi
+        fi
+        
+        if [ "$LB_DNS" = "" ] && [ "$PUBLIC_IP" = "" ]; then
           echo "✅ Service deployed successfully!"
-          echo "ℹ️  No load balancer configured. Service is running on Fargate."
+          echo "ℹ️  Service is running on Fargate. Check AWS Console for details."
         fi
