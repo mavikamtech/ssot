@@ -1,0 +1,90 @@
+name: Deploy GraphQL API to AWS Fargate
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "gql/**"
+      - "pkg/**"
+      - "go.mod"
+      - "go.sum"
+      - "Dockerfile"
+      - "ecs-task-def.json"
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: ssot-gql
+  ECS_SERVICE: ssot-gql-service
+  ECS_CLUSTER: ssot-cluster
+  ECS_TASK_DEFINITION: ecs-task-def.json
+  CONTAINER_NAME: ssot-gql
+
+jobs:
+  deploy:
+    name: Deploy to Fargate
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials via OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::167067248318:role/GithubActionServiceRole
+        role-session-name: gh-oidc-fargate-deploy
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        # Build a docker container and push it to ECR so that it can be deployed to ECS.
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: ${{ env.ECS_TASK_DEFINITION }}
+        container-name: ${{ env.CONTAINER_NAME }}
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
+
+    - name: Get service URL
+      run: |
+        # Get the load balancer URL for the service
+        SERVICE_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].serviceArn' --output text)
+        LOAD_BALANCER_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].loadBalancers[0].targetGroupArn' --output text)
+        
+        if [ "$LOAD_BALANCER_ARN" != "None" ] && [ "$LOAD_BALANCER_ARN" != "" ]; then
+          LB_ARN=$(aws elbv2 describe-target-groups --target-group-arns $LOAD_BALANCER_ARN --query 'TargetGroups[0].LoadBalancerArns[0]' --output text)
+          LB_DNS=$(aws elbv2 describe-load-balancers --load-balancer-arns $LB_ARN --query 'LoadBalancers[0].DNSName' --output text)
+          echo "🚀 Service deployed successfully!"
+          echo "📍 GraphQL Playground: http://$LB_DNS"
+          echo "📍 GraphQL API: http://$LB_DNS/query"
+          echo "📍 Health Check: http://$LB_DNS/health"
+        else
+          echo "✅ Service deployed successfully!"
+          echo "ℹ️  No load balancer configured. Service is running on Fargate."
+        fi
