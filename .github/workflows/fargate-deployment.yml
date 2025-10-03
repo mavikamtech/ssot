@@ -15,7 +15,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: ssot-gql
-  ECS_SERVICE: ssot-gql-task-service-5zxl94b3
+  ECS_SERVICE: arn:aws:ecs:us-east-1:167067248318:service/ssot-cluster/ssot-gql-task-service-5zxl94b3
   ECS_CLUSTER: arn:aws:ecs:us-east-1:167067248318:cluster/ssot-cluster
   TASK_FAMILY: ssot-gql-task
   CONTAINER_NAME: ssot-gql
