@@ -58,17 +58,37 @@ jobs:
     - name: Get existing task definition
       id: get-task-def
       run: |
+        # Debug: Check AWS credentials and permissions
+        echo "🔍 Checking AWS credentials..."
+        aws sts get-caller-identity
+        
+        # Debug: Check if cluster exists
+        echo "🔍 Checking if cluster exists..."
+        aws ecs describe-clusters --clusters ${{ env.ECS_CLUSTER }} --query 'clusters[0].clusterName' --output text || {
+          echo "❌ Error: Cannot access cluster or cluster doesn't exist"
+          exit 1
+        }
+        
+        # Debug: Check if service exists with detailed error output
+        echo "🔍 Checking if service exists..."
+        SERVICE_INFO=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} 2>&1) || {
+          echo "❌ Error: Failed to describe service"
+          echo "Error details: $SERVICE_INFO"
+          exit 1
+        }
+        
+        echo "Service info retrieved successfully"
+        
         # Get the current task definition
         echo "🔍 Getting task definition from service..."
-        TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].taskDefinition' --output text 2>/dev/null)
+        TASK_DEF_ARN=$(echo "$SERVICE_INFO" | jq -r '.services[0].taskDefinition // empty')
         
         echo "Task definition ARN: $TASK_DEF_ARN"
         
         # Check if we got a valid task definition ARN
         if [ "$TASK_DEF_ARN" = "" ] || [ "$TASK_DEF_ARN" = "None" ] || [ "$TASK_DEF_ARN" = "null" ]; then
           echo "❌ Error: No existing service or task definition found!"
-          echo "The deployment requires an existing ECS service and task definition."
-          echo "Please ensure the service '${{ env.ECS_SERVICE }}' exists in cluster '${{ env.ECS_CLUSTER }}'."
+          echo "Service response: $SERVICE_INFO"
           exit 1
         fi
         
@@ -76,11 +96,14 @@ jobs:
         
         # Get the task definition details
         echo "🔍 Fetching task definition details..."
-        aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition' > task-definition.json
+        aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition' > task-definition.json || {
+          echo "❌ Error: Failed to describe task definition"
+          exit 1
+        }
         
         # Verify the task definition file was created and has content
         if [ ! -s task-definition.json ]; then
-          echo "❌ Error: Failed to retrieve task definition details!"
+          echo "❌ Error: Task definition file is empty!"
           cat task-definition.json
           exit 1
         fi
@@ -89,7 +112,7 @@ jobs:
         
         # Get existing network configuration from service
         echo "🔍 Getting network configuration..."
-        EXISTING_CONFIG=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json 2>/dev/null)
+        EXISTING_CONFIG=$(echo "$SERVICE_INFO" | jq -r '.services[0].networkConfiguration.awsvpcConfiguration // null')
         
         if [ "$EXISTING_CONFIG" != "null" ] && [ "$EXISTING_CONFIG" != "" ]; then
           SUBNET_IDS=$(echo "$EXISTING_CONFIG" | jq -r '.subnets[]' 2>/dev/null | tr '\n' ',' | sed 's/,$//')
