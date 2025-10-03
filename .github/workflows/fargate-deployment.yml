@@ -15,7 +15,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: ssot-gql
-  ECS_SERVICE: ssot-gql-service
+  ECS_SERVICE: ssot-gql-task-service-5zxl94b3
   ECS_CLUSTER: arn:aws:ecs:us-east-1:167067248318:cluster/ssot-cluster
   TASK_FAMILY: ssot-gql-task
   CONTAINER_NAME: ssot-gql
@@ -85,10 +85,6 @@ jobs:
           jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' task-definition.json > temp.json && mv temp.json task-definition.json
         fi
 
-    - name: Create CloudWatch log group if not exists
-      run: |
-        aws logs create-log-group --log-group-name "/ecs/${{ env.TASK_FAMILY }}" --region ${{ env.AWS_REGION }} || true
-
     - name: Register new task definition
       id: register-task-def
       run: |
@@ -97,21 +93,11 @@ jobs:
 
     - name: Update ECS service
       run: |
-        # Check if service exists
-        SERVICE_EXISTS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[?status==`ACTIVE`]' --output text 2>/dev/null || echo "")
-        
-        if [ "$SERVICE_EXISTS" = "" ]; then
-          echo "❌ Error: ECS service '${{ env.ECS_SERVICE }}' not found or not active!"
-          echo "The deployment requires an existing active ECS service."
-          echo "Please ensure the service exists in cluster '${{ env.ECS_CLUSTER }}'."
-          exit 1
-        else
-          echo "Updating existing ECS service..."
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --service ${{ env.ECS_SERVICE }} \
-            --task-definition ${{ steps.register-task-def.outputs.task-definition-arn }}
-        fi
+        echo "Updating ECS service with new task definition..."
+        aws ecs update-service \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service ${{ env.ECS_SERVICE }} \
+          --task-definition ${{ steps.register-task-def.outputs.task-definition-arn }}
 
     - name: Wait for service stability
       run: |
