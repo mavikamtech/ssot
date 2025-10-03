@@ -38,7 +38,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: arn:aws:iam::167067248318:role/GithubActionServiceRole
-        role-session-name: gh-oidc-fargate-deploy-staging
+        role-session-name: gh-oidc-fargate-deploy
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Login to Amazon ECR
