@@ -59,31 +59,57 @@ jobs:
       id: get-task-def
       run: |
         # Get the current task definition
-        TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].taskDefinition' --output text 2>/dev/null || echo "")
+        echo "🔍 Getting task definition from service..."
+        TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].taskDefinition' --output text 2>/dev/null)
         
-        if [ "$TASK_DEF_ARN" = "" ] || [ "$TASK_DEF_ARN" = "None" ]; then
+        echo "Task definition ARN: $TASK_DEF_ARN"
+        
+        # Check if we got a valid task definition ARN
+        if [ "$TASK_DEF_ARN" = "" ] || [ "$TASK_DEF_ARN" = "None" ] || [ "$TASK_DEF_ARN" = "null" ]; then
           echo "❌ Error: No existing service or task definition found!"
           echo "The deployment requires an existing ECS service and task definition."
           echo "Please ensure the service '${{ env.ECS_SERVICE }}' exists in cluster '${{ env.ECS_CLUSTER }}'."
           exit 1
-        else
-          echo "Using existing task definition: $TASK_DEF_ARN"
-          aws ecs describe-task-definition --task-definition $TASK_DEF_ARN --query 'taskDefinition' > task-definition.json
+        fi
+        
+        echo "✅ Found task definition: $TASK_DEF_ARN"
+        
+        # Get the task definition details
+        echo "🔍 Fetching task definition details..."
+        aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition' > task-definition.json
+        
+        # Verify the task definition file was created and has content
+        if [ ! -s task-definition.json ]; then
+          echo "❌ Error: Failed to retrieve task definition details!"
+          cat task-definition.json
+          exit 1
+        fi
+        
+        echo "✅ Task definition retrieved successfully"
+        
+        # Get existing network configuration from service
+        echo "🔍 Getting network configuration..."
+        EXISTING_CONFIG=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json 2>/dev/null)
+        
+        if [ "$EXISTING_CONFIG" != "null" ] && [ "$EXISTING_CONFIG" != "" ]; then
+          SUBNET_IDS=$(echo "$EXISTING_CONFIG" | jq -r '.subnets[]' 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+          DEFAULT_SG=$(echo "$EXISTING_CONFIG" | jq -r '.securityGroups[0]' 2>/dev/null)
           
-          # Get existing network configuration from service
-          EXISTING_CONFIG=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json 2>/dev/null || echo "{}")
-          SUBNET_IDS=$(echo $EXISTING_CONFIG | jq -r '.subnets[]' 2>/dev/null | tr '\n' ',' | head -c -1 || echo "")
-          DEFAULT_SG=$(echo $EXISTING_CONFIG | jq -r '.securityGroups[0]' 2>/dev/null || echo "")
+          echo "Subnets: $SUBNET_IDS"
+          echo "Security Group: $DEFAULT_SG"
           
           echo "subnet-ids=$SUBNET_IDS" >> $GITHUB_OUTPUT
           echo "security-group=$DEFAULT_SG" >> $GITHUB_OUTPUT
-          
-          # Remove read-only fields
-          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' task-definition.json > temp.json && mv temp.json task-definition.json
-          
-          # Update the image
-          jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' task-definition.json > temp.json && mv temp.json task-definition.json
         fi
+        
+        # Remove read-only fields
+        echo "🔍 Processing task definition..."
+        jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' task-definition.json > temp.json && mv temp.json task-definition.json
+        
+        # Update the image
+        jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' task-definition.json > temp.json && mv temp.json task-definition.json
+        
+        echo "✅ Task definition processed successfully"
 
     - name: Register new task definition
       id: register-task-def
