@@ -1,4 +1,4 @@
-name: Deploy GraphQL API to AWS Fargate
+name: Deploy GQL API to AWS Fargate
 
 on:
   push:
