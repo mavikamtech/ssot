@@ -26,6 +26,7 @@ type Claims struct {
 	UserID string `json:"user_id"`
 	Email  string `json:"email"`
 	Role   string `json:"role"`
+	Env    string `json:"env"`
 	jwt.RegisteredClaims
 }
 
@@ -39,12 +40,24 @@ func GetJWTSecret() []byte {
 	return []byte(secret)
 }
 
+// GetCurrentEnv returns the current environment from ENV variable
+func GetCurrentEnv() string {
+	env := os.Getenv("ENV")
+	if env == "" {
+		env = "development" // default environment
+	}
+	return env
+}
+
 // GenerateToken generates a JWT token for a user
 func GenerateToken(user *User) (string, error) {
+	currentEnv := GetCurrentEnv()
+
 	claims := Claims{
 		UserID: user.ID,
 		Email:  user.Email,
 		Role:   user.Role,
+		Env:    currentEnv,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -70,6 +83,11 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		// Check if token environment matches current environment
+		currentEnv := GetCurrentEnv()
+		if claims.Env != currentEnv {
+			return nil, fmt.Errorf("token environment mismatch: token env '%s' does not match current env '%s'", claims.Env, currentEnv)
+		}
 		return claims, nil
 	}
 

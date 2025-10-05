@@ -2,7 +2,7 @@ name: Deploy GQL API to AWS Fargate (Staging)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "staging" ]
     paths:
       - "gql/**"
       - "pkg/**"
@@ -132,6 +132,9 @@ jobs:
         
         # Update the image
         jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' task-definition.json > temp.json && mv temp.json task-definition.json
+        
+        # Add or update environment variables
+        jq '.containerDefinitions[0].environment = (.containerDefinitions[0].environment // []) + [{"name": "ENV", "value": "staging"}]' task-definition.json > temp.json && mv temp.json task-definition.json
         
         echo "✅ Task definition processed successfully"
 
