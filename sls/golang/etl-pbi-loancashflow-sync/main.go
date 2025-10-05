@@ -25,9 +25,11 @@ var (
 )
 
 // renameCamdenToProject renames Camden references to Project-A in cell values
+// and Liberty to Project-B
 func renameCamdenToProject(cellValue string) string {
 	// Replace all instances of Camden with Project-A
 	cellValue = strings.ReplaceAll(cellValue, "Camden", "Project-A")
+	cellValue = strings.ReplaceAll(cellValue, "Liberty", "Project-B")
 	return cellValue
 }
 
