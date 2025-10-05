@@ -76,6 +76,7 @@ func main() {
 	mux.Handle("/query", auth.Middleware(srv))
 
 	log.Printf("starting the server at :%s for GraphQL", port)
+	log.Printf("current environment: %s", auth.GetCurrentEnv())
 	log.Printf("using DynamoDB loan cash flow table: %s", serviceConfig.LoanCashFlowTableName)
 	// log.Printf("Authentication endpoints:")
 	// log.Printf("  POST /auth/login - Login with email/password")
