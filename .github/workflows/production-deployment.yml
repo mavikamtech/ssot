@@ -133,6 +133,9 @@ jobs:
         # Update the image
         jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' task-definition.json > temp.json && mv temp.json task-definition.json
         
+        # Add or update environment variables
+        jq '.containerDefinitions[0].environment = (.containerDefinitions[0].environment // []) + [{"name": "ENV", "value": "production"}]' task-definition.json > temp.json && mv temp.json task-definition.json
+        
         echo "✅ Task definition processed successfully"
 
     - name: Register new task definition
