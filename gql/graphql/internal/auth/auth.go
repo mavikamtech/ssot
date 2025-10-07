@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"ssot/gql/graphql/internal/constants"
+
 	"github.com/MicahParks/keyfunc/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -35,9 +37,8 @@ type Claims struct {
 
 // AWS Cognito configuration
 var (
-	Region        = "us-east-1"
-	UserPoolID    = "ssot-gql-" + GetCurrentEnv()
-	RequiredScope = "default-m2m-resource-server-vuiu3j/read"
+	Region     = "us-east-1"
+	UserPoolID = constants.GetUserPoolID("ssot-gql-" + GetCurrentEnv())
 )
 
 // GetJWTSecret returns the JWT secret from environment or a default value
@@ -54,7 +55,7 @@ func GetJWTSecret() []byte {
 func GetCurrentEnv() string {
 	env := os.Getenv("ENV")
 	if env == "" {
-		env = "development" // default environment
+		env = "staging" // default environment
 	}
 	return env
 }
@@ -97,15 +98,6 @@ func ValidateCognitoToken(tokenString string) (*User, error) {
 	issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", region, UserPoolID)
 	if claims["iss"] != issuer {
 		return nil, errors.New("invalid issuer")
-	}
-
-	// Check scope
-	if scopes, ok := claims["scope"].(string); ok {
-		if !strings.Contains(scopes, RequiredScope) {
-			return nil, fmt.Errorf("missing required scope %s", RequiredScope)
-		}
-	} else {
-		return nil, errors.New("no scopes in token")
 	}
 
 	// Create user from Cognito claims
