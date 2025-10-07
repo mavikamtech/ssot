@@ -4,13 +4,17 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"ssot/gql/graphql/graph/model"
+	"ssot/gql/graphql/internal/auth"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
+
+var loancashflowReadScope = "ssot:gql:loancashflow:read"
 
 type LoanCashFlowService struct {
 	client    *dynamodb.Client
@@ -25,6 +29,14 @@ func NewLoanCashFlowService(client *dynamodb.Client, tableName string) *LoanCash
 }
 
 func (s *LoanCashFlowService) GetByLoanCode(ctx context.Context, loanCode string) ([]*model.LoanCashFlow, error) {
+	user, err := auth.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unauthorized: %w", err)
+	}
+	if !strings.Contains(user.Scope, loancashflowReadScope) {
+		return nil, fmt.Errorf("insufficient scope: missing required scope %s", loancashflowReadScope)
+	}
+
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String(s.tableName),
 		IndexName:              aws.String("loancode-postdate-maxHmy-index"),

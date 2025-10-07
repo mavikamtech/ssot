@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/99designs/gqlgen v0.17.80
+	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/vektah/gqlparser/v2 v2.5.30
 	github.com/xuri/excelize/v2 v2.9.1
