@@ -13,6 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"ssot/gql/graphql/internal/constants"
+
+	"github.com/MicahParks/keyfunc/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -37,9 +40,11 @@ type JWKSet struct {
 }
 
 type User struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	ID       string `json:"id"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+	Scope    string `json:"scope"`
+	ClientID string `json:"client_id"`
 }
 
 type Claims struct {
@@ -49,6 +54,12 @@ type Claims struct {
 	Env    string `json:"env"`
 	jwt.RegisteredClaims
 }
+
+// AWS Cognito configuration
+var (
+	Region     = "us-east-1"
+	UserPoolID = constants.GetUserPoolID("ssot-gql-" + GetCurrentEnv())
+)
 
 // GetJWTSecret returns the JWT secret from environment or a default value
 func GetJWTSecret() []byte {
@@ -64,9 +75,61 @@ func GetJWTSecret() []byte {
 func GetCurrentEnv() string {
 	env := os.Getenv("ENV")
 	if env == "" {
-		env = "development" // default environment
+		env = "staging" // default environment
 	}
 	return env
+}
+
+// ValidateCognitoToken validates an AWS Cognito JWT token
+func ValidateCognitoToken(tokenString string) (*User, error) {
+	// Check if Cognito configuration is available
+	if UserPoolID == "" {
+		return nil, errors.New("cognito configuration not available")
+	}
+
+	// Override region from environment if available
+	region := os.Getenv("AWS_REGION")
+	if region == "" {
+		region = Region
+	}
+
+	// Create JWKS URL
+	jwksURL := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", region, UserPoolID)
+
+	// Create JWKS from the resource at the given URL.
+	jwks, err := keyfunc.Get(jwksURL, keyfunc.Options{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get JWKS: %v", err)
+	}
+	defer jwks.EndBackground()
+
+	// Parse and validate token
+	token, err := jwt.Parse(tokenString, jwks.Keyfunc)
+	if err != nil || !token.Valid {
+		return nil, fmt.Errorf("invalid token: %v", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid claims")
+	}
+
+	// Validate issuer
+	issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", region, UserPoolID)
+	if claims["iss"] != issuer {
+		return nil, errors.New("invalid issuer")
+	}
+
+	// Create user from Cognito claims
+	user := &User{
+		ID:       fmt.Sprintf("cognito-%v", claims["sub"]),
+		Email:    fmt.Sprintf("%v", claims["email"]),
+		Role:     "user", // Default role for Cognito users
+		Scope:    fmt.Sprintf("%v", claims["scope"]),
+		ClientID: fmt.Sprintf("%v", claims["client_id"]),
+	}
+
+	return user, nil
 }
 
 // GenerateToken generates a JWT token for a user
@@ -89,8 +152,35 @@ func GenerateToken(user *User) (string, error) {
 	return token.SignedString(GetJWTSecret())
 }
 
-// ValidateToken validates a JWT token and returns the claims
-func ValidateToken(tokenString string) (*Claims, error) {
+// ValidateToken validates a JWT token and returns the user
+// It tries to validate as a local token first, then as a Cognito token
+func ValidateToken(tokenString string) (*User, error) {
+	// First try to validate as a local token
+	localClaims, err := validateLocalToken(tokenString)
+	if err == nil {
+		// Create user from local claims
+		user := &User{
+			ID:       localClaims.UserID,
+			Email:    localClaims.Email,
+			Role:     localClaims.Role,
+			Scope:    "ssot:gql:loancashflow:read", // Example scope for local tokens
+			ClientID: "use-local-token",            // Local tokens do not have client_id
+		}
+		return user, nil
+	}
+
+	// If local token validation fails, try Cognito token validation
+	cognitoUser, cognitoErr := ValidateCognitoToken(tokenString)
+	if cognitoErr == nil {
+		return cognitoUser, nil
+	}
+
+	// Both validations failed
+	return nil, fmt.Errorf("token validation failed - local: %v, cognito: %v", err, cognitoErr)
+}
+
+// validateLocalToken validates a local JWT token and returns the claims
+func validateLocalToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
