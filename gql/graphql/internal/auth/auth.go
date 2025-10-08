@@ -2,8 +2,12 @@ package auth
 
 import (
 	"context"
+	"crypto/rsa"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"os"
 	"strings"
@@ -18,6 +22,22 @@ import (
 type contextKey string
 
 const UserContextKey = contextKey("user")
+
+// JWK represents a JSON Web Key
+type JWK struct {
+	Kty string   `json:"kty"`
+	Use string   `json:"use"`
+	Kid string   `json:"kid"`
+	X5t string   `json:"x5t"`
+	N   string   `json:"n"`
+	E   string   `json:"e"`
+	X5c []string `json:"x5c"`
+}
+
+// JWKSet represents a set of JSON Web Keys
+type JWKSet struct {
+	Keys []JWK `json:"keys"`
+}
 
 type User struct {
 	ID       string `json:"id"`
@@ -202,15 +222,15 @@ func Middleware(next http.Handler) http.Handler {
 		fmt.Println("x-amzn-oidc-data:", r.Header.Get("x-amzn-oidc-data"))
 		fmt.Println("x-amzn-oidc-identity:", r.Header.Get("x-amzn-oidc-identity"))
 
-		claimsentral := jwt.MapClaims{}
-		jwt.ParseWithClaims(r.Header.Get("x-amzn-oidc-data"), claimsentral, nil)
+		oidcClaims, err := parseAlbOIDCHeader(r.Header.Get("x-amzn-oidc-data"))
+		if err != nil {
+			fmt.Println("parse error:", err)
+			return
+		}
+		fmt.Printf("Authenticated user: %v\n", oidcClaims["email"])
+		fmt.Println("claims:", oidcClaims)
 
-		email := claimsentral["email"]
-		fmt.Printf("Authenticated user: %v\n", email)
-
-		fmt.Println("claims:", claimsentral)
-
-		// ctx := context.WithValue(r.Context(), "user", claims)
+		// ctx := context.WithValue(r.Context(), "user", oidcClaims)
 		// next.ServeHTTP(w, r.WithContext(ctx))
 
 		// Extract token from Authorization header
@@ -232,12 +252,19 @@ func Middleware(next http.Handler) http.Handler {
 
 		// Extract the token
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		user, err := ValidateToken(tokenString)
+		jwtClaims, err := ValidateToken(tokenString)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"errors":[{"message":"Invalid token"}]}`))
 			return
+		}
+
+		// Create user from claims
+		user := &User{
+			ID:    jwtClaims.UserID,
+			Email: jwtClaims.Email,
+			Role:  jwtClaims.Role,
 		}
 
 		// Add user to context
@@ -267,4 +294,123 @@ func RequireRole(ctx context.Context, requiredRole string) error {
 	}
 
 	return nil
+}
+
+// fetchEntraIDPublicKeys fetches the public keys from Entra ID
+func fetchEntraIDPublicKeys() (*JWKSet, error) {
+	const jwksURL = "https://login.microsoftonline.com/0beed8a0-2f9c-4bff-a92a-1e445f1c15bd/discovery/v2.0/keys"
+
+	resp, err := http.Get(jwksURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch JWKS: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var jwks JWKSet
+	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
+		return nil, fmt.Errorf("failed to decode JWKS: %w", err)
+	}
+
+	return &jwks, nil
+}
+
+// jwkToRSAPublicKey converts a JWK to RSA public key
+func jwkToRSAPublicKey(jwk JWK) (*rsa.PublicKey, error) {
+	// Decode the modulus (n)
+	nBytes, err := base64.RawURLEncoding.DecodeString(jwk.N)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode modulus: %w", err)
+	}
+
+	// Decode the exponent (e)
+	eBytes, err := base64.RawURLEncoding.DecodeString(jwk.E)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode exponent: %w", err)
+	}
+
+	// Convert bytes to big integers
+	n := new(big.Int).SetBytes(nBytes)
+	e := new(big.Int).SetBytes(eBytes)
+
+	return &rsa.PublicKey{
+		N: n,
+		E: int(e.Int64()),
+	}, nil
+}
+
+func parseAlbOIDCHeader(h string) (jwt.MapClaims, error) {
+	decoded, err := base64.StdEncoding.DecodeString(h)
+	if err != nil {
+		return nil, fmt.Errorf("base64 decode error: %w", err)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(decoded, &payload); err != nil {
+		return nil, fmt.Errorf("json unmarshal error: %w", err)
+	}
+
+	idToken, _ := payload["id_token"].(string)
+	if idToken == "" {
+		return nil, fmt.Errorf("no id_token in header")
+	}
+
+	jwks, err := fetchEntraIDPublicKeys()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch Entra ID public keys: %w", err)
+	}
+
+	parts := strings.Split(idToken, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid JWT format")
+	}
+
+	headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode JWT header: %w", err)
+	}
+
+	var header map[string]interface{}
+	if err := json.Unmarshal(headerBytes, &header); err != nil {
+		return nil, fmt.Errorf("failed to parse JWT header: %w", err)
+	}
+
+	kid, ok := header["kid"].(string)
+	if !ok {
+		return nil, fmt.Errorf("no kid in JWT header")
+	}
+
+	var jwk *JWK
+	for _, key := range jwks.Keys {
+		if key.Kid == kid {
+			jwk = &key
+			break
+		}
+	}
+
+	if jwk == nil {
+		return nil, fmt.Errorf("no matching key found for kid: %s", kid)
+	}
+
+	publicKey, err := jwkToRSAPublicKey(*jwk)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert JWK to RSA public key: %w", err)
+	}
+
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(idToken, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return publicKey, nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse and verify JWT: %w", err)
+	}
+
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid JWT token")
+	}
+
+	return claims, nil
 }
