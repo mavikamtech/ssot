@@ -237,8 +237,8 @@ func Middleware(next http.Handler) http.Handler {
 		header, _ := decodeSegment(parts[0])
 		claims, _ := decodeSegment(parts[1])
 
-		fmt.Fprintf(w, "Header: %+v\n", header)
-		fmt.Fprintf(w, "Claims: %+v\n", claims)
+		fmt.Printf("Header: %+v\n", header)
+		fmt.Printf("Claims: %+v\n", claims)
 
 		// Extract token from Authorization header
 		authHeader := r.Header.Get("Authorization")
