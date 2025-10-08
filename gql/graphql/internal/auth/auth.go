@@ -202,6 +202,17 @@ func Middleware(next http.Handler) http.Handler {
 		fmt.Println("x-amzn-oidc-data:", r.Header.Get("x-amzn-oidc-data"))
 		fmt.Println("x-amzn-oidc-identity:", r.Header.Get("x-amzn-oidc-identity"))
 
+		claimsentral := jwt.MapClaims{}
+		jwt.ParseWithClaims(r.Header.Get("x-amzn-oidc-data"), claimsentral, nil)
+
+		email := claimsentral["email"]
+		fmt.Printf("Authenticated user: %v\n", email)
+
+		fmt.Println("claims:", claimsentral)
+
+		// ctx := context.WithValue(r.Context(), "user", claims)
+		// next.ServeHTTP(w, r.WithContext(ctx))
+
 		// Extract token from Authorization header
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
