@@ -222,23 +222,25 @@ func Middleware(next http.Handler) http.Handler {
 
 		parts := strings.Split(r.Header.Get("x-amzn-oidc-data"), ".")
 
-		decodeSegment := func(seg string) (map[string]interface{}, error) {
-			data, err := base64.RawURLEncoding.DecodeString(seg)
-			if err != nil {
-				return nil, err
-			}
-			var m map[string]interface{}
-			if err := json.Unmarshal(data, &m); err != nil {
-				return nil, err
-			}
-			return m, nil
+		header, err := decodeSegment(parts[0])
+		if err != nil {
+			fmt.Println("Failed to decode header:", err)
+			return
 		}
 
-		header, _ := decodeSegment(parts[0])
-		claims, _ := decodeSegment(parts[1])
+		payload, err := decodeSegment(parts[1])
+		if err != nil {
+			fmt.Println("Failed to decode payload:", err)
+			return
+		}
 
-		fmt.Printf("Header: %+v\n", header)
-		fmt.Printf("Claims: %+v\n", claims)
+		h, _ := json.MarshalIndent(header, "", "  ")
+		p, _ := json.MarshalIndent(payload, "", "  ")
+
+		fmt.Println("=== HEADER ===")
+		fmt.Println(string(h))
+		fmt.Println("\n=== PAYLOAD ===")
+		fmt.Println(string(p))
 
 		// Extract token from Authorization header
 		authHeader := r.Header.Get("Authorization")
@@ -280,4 +282,16 @@ func GetUserFromContext(ctx context.Context) (*User, error) {
 		return nil, errors.New("user not found in context")
 	}
 	return user, nil
+}
+
+func decodeSegment(seg string) (map[string]interface{}, error) {
+	data, err := base64.StdEncoding.DecodeString(seg)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
