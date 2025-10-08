@@ -25,3 +25,9 @@ functions:
       DYNAMO_TABLE_NAME: test-poc-powerbi-api-Job
       POWERBI_APPLICATION_CONFIG_NAME: powerbi-application-config
       POWERBI_APPLICATION_SECRET_NAME: powerbi-application-secret
+    vpc:
+      securityGroupIds:
+        - sg-0ffeef1c57a795a0d
+      subnetIds:
+        - subnet-07a88fae33859673b
+        - subnet-0c869995323aac9f6
