@@ -260,15 +260,8 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Create user from claims
-		user := &User{
-			ID:    jwtClaims.UserID,
-			Email: jwtClaims.Email,
-			Role:  jwtClaims.Role,
-		}
-
 		// Add user to context
-		ctx := context.WithValue(r.Context(), UserContextKey, user)
+		ctx := context.WithValue(r.Context(), UserContextKey, jwtClaims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
