@@ -109,6 +109,9 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		fmt.Println("x-amzn-oidc-data:", r.Header.Get("x-amzn-oidc-data"))
+		fmt.Println("x-amzn-oidc-identity:", r.Header.Get("x-amzn-oidc-identity"))
+
 		// Extract token from Authorization header
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
