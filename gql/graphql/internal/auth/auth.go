@@ -332,9 +332,26 @@ func jwkToRSAPublicKey(jwk JWK) (*rsa.PublicKey, error) {
 }
 
 func parseAlbOIDCHeader(h string) (jwt.MapClaims, error) {
-	decoded, err := base64.StdEncoding.DecodeString(h)
+	// Try different base64 decoding strategies
+	var decoded []byte
+	var err error
+
+	// First try standard base64 decoding
+	decoded, err = base64.StdEncoding.DecodeString(h)
 	if err != nil {
-		return nil, fmt.Errorf("base64 decode error: %w", err)
+		// If that fails, try URL-safe base64 decoding
+		decoded, err = base64.URLEncoding.DecodeString(h)
+		if err != nil {
+			// If that fails, try raw URL-safe base64 decoding (no padding)
+			decoded, err = base64.RawURLEncoding.DecodeString(h)
+			if err != nil {
+				// If that fails, try raw standard base64 decoding (no padding)
+				decoded, err = base64.RawStdEncoding.DecodeString(h)
+				if err != nil {
+					return nil, fmt.Errorf("base64 decode error: %w", err)
+				}
+			}
+		}
 	}
 
 	var payload map[string]any
