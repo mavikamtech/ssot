@@ -217,6 +217,15 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		// Print all headers
+		fmt.Println("=== ALL REQUEST HEADERS ===")
+		for name, values := range r.Header {
+			for _, value := range values {
+				fmt.Printf("%s: %s\n", name, value)
+			}
+		}
+		fmt.Println("================================")
+
 		fmt.Println("x-amzn-oidc-data:", r.Header.Get("x-amzn-oidc-data"))
 		fmt.Println("x-amzn-oidc-identity:", r.Header.Get("x-amzn-oidc-identity"))
 		fmt.Println("x-amzn-oidc-accesstoken:", r.Header.Get("x-amzn-oidc-accesstoken"))
