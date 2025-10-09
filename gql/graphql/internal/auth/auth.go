@@ -252,6 +252,32 @@ func Middleware(next http.Handler) http.Handler {
 		fmt.Println("\n=== PAYLOAD ===")
 		fmt.Println(string(p))
 
+		accessToken := r.Header.Get("X-Amzn-Oidc-Accesstoken")
+		if accessToken == "" {
+			http.Error(w, "No access token", http.StatusUnauthorized)
+			return
+		}
+
+		roles, err := extractRolesFromAccessToken(accessToken)
+		if err != nil {
+			fmt.Printf("Error extracting roles: %v\n", err)
+		} else {
+			fmt.Printf("User roles: %v\n", roles)
+
+			hasPermission := false
+			for _, role := range roles {
+				if role == "SSOTGQLLoanCashFlowReader" {
+					hasPermission = true
+					break
+				}
+			}
+
+			if !hasPermission {
+				http.Error(w, "Insufficient permissions", http.StatusForbidden)
+				return
+			}
+		}
+
 		// Extract token from Authorization header
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -304,4 +330,27 @@ func decodeSegment(seg string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func extractRolesFromAccessToken(accessToken string) ([]string, error) {
+	parts := strings.Split(accessToken, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid token format")
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, err
+	}
+
+	var claims struct {
+		Roles []string `json:"roles"`
+		Aud   string   `json:"aud"`
+	}
+
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return nil, err
+	}
+
+	return claims.Roles, nil
 }
