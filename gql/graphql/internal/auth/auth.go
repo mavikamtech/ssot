@@ -219,6 +219,7 @@ func Middleware(next http.Handler) http.Handler {
 
 		fmt.Println("x-amzn-oidc-data:", r.Header.Get("x-amzn-oidc-data"))
 		fmt.Println("x-amzn-oidc-identity:", r.Header.Get("x-amzn-oidc-identity"))
+		fmt.Println("x-amzn-oidc-accesstoken:", r.Header.Get("x-amzn-oidc-accesstoken"))
 
 		parts := strings.Split(r.Header.Get("x-amzn-oidc-data"), ".")
 
