@@ -258,14 +258,6 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Check for x-amzn-oidc-data header first
-		if user, err := validateOIDCAuth(r); err == nil {
-			// OIDC authentication successful, add user to context and continue
-			ctx := context.WithValue(r.Context(), UserContextKey, user)
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
-		}
-
 		// Print all headers (for debugging)
 		fmt.Println("=== ALL REQUEST HEADERS ===")
 		for name, values := range r.Header {
@@ -312,19 +304,14 @@ func Middleware(next http.Handler) http.Handler {
 			fmt.Printf("Error extracting roles: %v\n", err)
 		} else {
 			fmt.Printf("User roles: %v\n", roles)
+		}
 
-			hasPermission := false
-			for _, role := range roles {
-				if role == "SSOTGQLLoanCashFlowReader" {
-					hasPermission = true
-					break
-				}
-			}
-
-			if !hasPermission {
-				http.Error(w, "Insufficient permissions", http.StatusForbidden)
-				return
-			}
+		// Check for x-amzn-oidc-data header first
+		if user, err := validateOIDCAuth(r); err == nil {
+			// OIDC authentication successful, add user to context and continue
+			ctx := context.WithValue(r.Context(), UserContextKey, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
 		}
 
 		// Extract token from Authorization header
@@ -393,7 +380,7 @@ func extractRolesFromAccessToken(accessToken string) ([]string, error) {
 	}
 
 	var claims struct {
-		Roles []string `json:"roles"`
+		Roles []string `json:"roles,omitempty"`
 		Aud   string   `json:"aud"`
 	}
 
