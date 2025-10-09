@@ -202,6 +202,47 @@ func validateLocalToken(tokenString string) (*Claims, error) {
 	return nil, errors.New("invalid token")
 }
 
+// validateOIDCAuth validates OIDC authentication from x-amzn-oidc-data header
+func validateOIDCAuth(r *http.Request) (*User, error) {
+	oidcData := r.Header.Get("x-amzn-oidc-data")
+	if oidcData == "" {
+		return nil, errors.New("no OIDC data found")
+	}
+
+	// Try to decode the OIDC data
+	parts := strings.Split(oidcData, ".")
+	if len(parts) < 2 {
+		return nil, errors.New("invalid OIDC data format")
+	}
+
+	payload, err := decodeSegment(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode OIDC payload: %v", err)
+	}
+
+	// Check if email field exists and is not empty
+	email, exists := payload["email"]
+	if !exists || email == "" {
+		return nil, errors.New("email not found in OIDC data")
+	}
+
+	emailStr := fmt.Sprintf("%v", email)
+	if emailStr == "" {
+		return nil, errors.New("empty email in OIDC data")
+	}
+
+	// Create user with the required scope
+	user := &User{
+		ID:       fmt.Sprintf("oidc-%v", payload["sub"]),
+		Email:    emailStr,
+		Role:     "user",
+		Scope:    "ssot:gql:loancashflow:read",
+		ClientID: "oidc-client",
+	}
+
+	return user, nil
+}
+
 // Middleware creates a middleware that validates JWT tokens
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -217,7 +258,15 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Print all headers
+		// Check for x-amzn-oidc-data header first
+		if user, err := validateOIDCAuth(r); err == nil {
+			// OIDC authentication successful, add user to context and continue
+			ctx := context.WithValue(r.Context(), UserContextKey, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
+		// Print all headers (for debugging)
 		fmt.Println("=== ALL REQUEST HEADERS ===")
 		for name, values := range r.Header {
 			for _, value := range values {
