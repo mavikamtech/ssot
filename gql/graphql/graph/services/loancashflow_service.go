@@ -67,15 +67,27 @@ func (s *LoanCashFlowService) GetByLoanCode(ctx context.Context, loanCode string
 func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.AttributeValue) (*model.LoanCashFlow, error) {
 	loanCashFlow := &model.LoanCashFlow{}
 
-	if loanCodeAttr, ok := item["loanCode"]; ok {
+	if loanCodeAttr, ok := item["loancode"]; ok {
 		if s, ok := loanCodeAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.LoanCode = s.Value
+			loanCashFlow.Loancode = s.Value
 		}
 	}
 
 	if maxHmyAttr, ok := item["maxHmy"]; ok {
 		if s, ok := maxHmyAttr.(*types.AttributeValueMemberS); ok {
 			loanCashFlow.MaxHmy = &s.Value
+		}
+	}
+
+	if accrualenddateAttr, ok := item["accrualenddate"]; ok {
+		if s, ok := accrualenddateAttr.(*types.AttributeValueMemberS); ok {
+			loanCashFlow.Accrualenddate = &s.Value
+		}
+	}
+
+	if accrualstartdateAttr, ok := item["accrualstartdate"]; ok {
+		if s, ok := accrualstartdateAttr.(*types.AttributeValueMemberS); ok {
+			loanCashFlow.Accrualstartdate = &s.Value
 		}
 	}
 
@@ -94,10 +106,50 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 		}
 	}
 
+	if capitalizedFeeAttr, ok := item["capitalizedFee"]; ok {
+		if n, ok := capitalizedFeeAttr.(*types.AttributeValueMemberN); ok {
+			if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
+				loanCashFlow.CapitalizedFee = &val
+			}
+		}
+	}
+
+	if capitalizedInterestAttr, ok := item["capitalizedInterest"]; ok {
+		if n, ok := capitalizedInterestAttr.(*types.AttributeValueMemberN); ok {
+			if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
+				loanCashFlow.CapitalizedInterest = &val
+			}
+		}
+	}
+
+	if capitalizedLoanAdministrationFeeAttr, ok := item["capitalizedLoanAdministrationFee"]; ok {
+		if n, ok := capitalizedLoanAdministrationFeeAttr.(*types.AttributeValueMemberN); ok {
+			if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
+				loanCashFlow.CapitalizedLoanAdministrationFee = &val
+			}
+		}
+	}
+
+	if capitalizedOtherFeesAttr, ok := item["capitalizedOtherFees"]; ok {
+		if n, ok := capitalizedOtherFeesAttr.(*types.AttributeValueMemberN); ok {
+			if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
+				loanCashFlow.CapitalizedOtherFees = &val
+			}
+		}
+	}
+
 	if commitmentAttr, ok := item["commitment"]; ok {
 		if n, ok := commitmentAttr.(*types.AttributeValueMemberN); ok {
 			if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
 				loanCashFlow.Commitment = &val
+			}
+		}
+	}
+
+	if drawActualPrincipalAttr, ok := item["drawActualPrincipal"]; ok {
+		if n, ok := drawActualPrincipalAttr.(*types.AttributeValueMemberN); ok {
+			if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
+				loanCashFlow.DrawActualPrincipal = &val
 			}
 		}
 	}
@@ -154,9 +206,9 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 		}
 	}
 
-	if periodendAttr, ok := item["periodend"]; ok {
-		if s, ok := periodendAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Periodend = &s.Value
+	if paymentnumberAttr, ok := item["paymentnumber"]; ok {
+		if s, ok := paymentnumberAttr.(*types.AttributeValueMemberS); ok {
+			loanCashFlow.Paymentnumber = &s.Value
 		}
 	}
 

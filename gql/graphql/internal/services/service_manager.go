@@ -36,10 +36,27 @@ func NewServiceManager(config ServiceConfig) *ServiceManager {
 func LoadServiceConfigFromEnv(dynamoClient *dynamodb.Client) ServiceConfig {
 	return ServiceConfig{
 		DynamoClient:          dynamoClient,
-		LoanCashFlowTableName: getEnvWithDefault("LOAN_CASHFLOW_TABLE_NAME", "pbi-loancashflow"),
+		LoanCashFlowTableName: getLoanCashFlowTableName(),
 		// Future environment variable mappings can be added here
 		// LoanInfoTableName:     getEnvWithDefault("LOAN_INFO_TABLE_NAME", "pbi-loaninfo"),
 		// PropertyTableName:     getEnvWithDefault("PROPERTY_TABLE_NAME", "pbi-property"),
+	}
+}
+
+func getLoanCashFlowTableName() string {
+	// TODO: we will have "pbi-loancashflow-staging" for lower envs
+	if tableName := os.Getenv("LOAN_CASHFLOW_TABLE_NAME"); tableName != "" {
+		return tableName
+	}
+
+	env := getEnvWithDefault("ENV", "")
+	switch env {
+	case "prod":
+		return "pbi-loancashflow-prod"
+	case "staging":
+		return "pbi-loancashflow"
+	default:
+		return "pbi-loancashflow"
 	}
 }
 

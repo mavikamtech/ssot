@@ -10,6 +10,7 @@ import (
 	"ssot/gql/graphql/internal/auth"
 )
 
+// ByLoanCode is the resolver for the byLoanCode field.
 func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode string) ([]*model.LoanCashFlow, error) {
 	// Check authentication
 	_, err := auth.GetUserFromContext(ctx)
@@ -30,6 +31,8 @@ func (r *queryResolver) LoanCashFlow(ctx context.Context) (*model.LoanCashFlows,
 
 	return &model.LoanCashFlows{}, nil
 }
+
+// LoanCashFlows returns LoanCashFlowsResolver implementation.
 func (r *Resolver) LoanCashFlows() LoanCashFlowsResolver { return &loanCashFlowsResolver{r} }
 
 // Query returns QueryResolver implementation.

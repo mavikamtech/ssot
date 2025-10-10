@@ -26,12 +26,12 @@ var (
 
 // renameCamdenToProject renames Camden references to Project-A in cell values
 // and Liberty to Project-B
-func renameCamdenToProject(cellValue string) string {
-	// Replace all instances of Camden with Project-A
-	cellValue = strings.ReplaceAll(cellValue, "Camden", "Project-A")
-	cellValue = strings.ReplaceAll(cellValue, "Liberty", "Project-B")
-	return cellValue
-}
+// func renameCamdenToProject(cellValue string) string {
+// 	// Replace all instances of Camden with Project-A
+// 	cellValue = strings.ReplaceAll(cellValue, "Camden", "Project-A")
+// 	cellValue = strings.ReplaceAll(cellValue, "Liberty", "Project-B")
+// 	return cellValue
+// }
 
 func Handler(ctx context.Context) error {
 	awscfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
@@ -43,8 +43,8 @@ func Handler(ctx context.Context) error {
 
 	s3Writer := NewS3Writer(s3Client, "mavik-powerbi-analytics-data", "loan-cashflow")
 
-	bucket := "loancashflow-sync-excel"
-	key := "YDC-Response-LoanCashFlow-Camden-Only.xlsx"
+	bucket := "loancashflow-sync-excel-2"
+	key := "YDC-Response-LoanCashFlow.xlsx"
 	fmt.Printf("Processing file from S3: bucket=%s key=%s\n", bucket, key)
 
 	obj, err := s3Client.GetObject(ctx, &s3.GetObjectInput{
@@ -121,7 +121,7 @@ func Handler(ctx context.Context) error {
 			}
 
 			// Apply Camden to Project-A renaming transformation
-			cellValue = renameCamdenToProject(cellValue)
+			// cellValue = renameCamdenToProject(cellValue)
 
 			attrValue := dynamoutils.ParseValue(cellValue)
 
@@ -204,7 +204,7 @@ func Handler(ctx context.Context) error {
 			}
 
 			// Apply Camden to Project-A renaming transformation
-			cellValue = renameCamdenToProject(cellValue)
+			// cellValue = renameCamdenToProject(cellValue)
 
 			attrValue := dynamoutils.ParseValue(cellValue)
 			itemForS3[header] = convertDynamoAttributeToInterface(attrValue)
