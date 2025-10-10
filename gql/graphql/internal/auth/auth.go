@@ -209,19 +209,49 @@ func validateOIDCAuth(r *http.Request) (*User, error) {
 		return nil, errors.New("no OIDC data found")
 	}
 
-	// Try to decode the OIDC data
-	parts := strings.Split(oidcData, ".")
-	if len(parts) < 2 {
-		return nil, errors.New("invalid OIDC data format")
+	// Validate JWT signature and parse token
+	token, err := jwt.Parse(oidcData, func(token *jwt.Token) (interface{}, error) {
+		// Get AWS region from environment or use default
+		region := os.Getenv("AWS_REGION")
+		if region == "" {
+			region = Region
+		}
+
+		// Create JWKS URL for ALB OIDC endpoint
+		// ALB uses a different JWKS endpoint than Cognito
+		jwksURL := fmt.Sprintf("https://public-keys.auth.elb.%s.amazonaws.com", region)
+
+		// Create JWKS from the resource at the given URL
+		jwks, err := keyfunc.Get(jwksURL, keyfunc.Options{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get JWKS: %v", err)
+		}
+		defer jwks.EndBackground()
+
+		// Get the key function for this token
+		keyFunc, err := jwks.Keyfunc(token)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get key function: %v", err)
+		}
+		return keyFunc, nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate OIDC token signature: %v", err)
 	}
 
-	payload, err := decodeSegment(parts[1])
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode OIDC payload: %v", err)
+	if !token.Valid {
+		return nil, errors.New("invalid OIDC token")
+	}
+
+	// Extract claims from the validated token
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
 	}
 
 	// Check if email field exists and is not empty
-	email, exists := payload["email"]
+	email, exists := claims["email"]
 	if !exists || email == "" {
 		return nil, errors.New("email not found in OIDC data")
 	}
@@ -231,9 +261,24 @@ func validateOIDCAuth(r *http.Request) (*User, error) {
 		return nil, errors.New("empty email in OIDC data")
 	}
 
+	// Validate token expiration
+	if exp, ok := claims["exp"].(float64); ok {
+		if time.Now().Unix() > int64(exp) {
+			return nil, errors.New("OIDC token has expired")
+		}
+	}
+
+	// Validate issuer if present
+	if iss, ok := claims["iss"].(string); ok {
+		expectedIssuerPattern := "amazonaws.com"
+		if !strings.Contains(iss, expectedIssuerPattern) {
+			return nil, fmt.Errorf("invalid issuer: %s", iss)
+		}
+	}
+
 	// Create user with the required scope
 	user := &User{
-		ID:       fmt.Sprintf("oidc-%v", payload["sub"]),
+		ID:       fmt.Sprintf("oidc-%v", claims["sub"]),
 		Email:    emailStr,
 		Role:     "user",
 		Scope:    "ssot:gql:loancashflow:read",
