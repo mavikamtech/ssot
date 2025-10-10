@@ -48,23 +48,30 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	LoanCashFlow struct {
-		Balance          func(childComplexity int) int
-		Commitment       func(childComplexity int) int
-		Ebalance         func(childComplexity int) int
-		GlPerioddate     func(childComplexity int) int
-		Interest         func(childComplexity int) int
-		LeverageActivity func(childComplexity int) int
-		LeverageBalance  func(childComplexity int) int
-		LeverageInterest func(childComplexity int) int
-		LoanCode         func(childComplexity int) int
-		Loandesc         func(childComplexity int) int
-		MaxHmy           func(childComplexity int) int
-		Periodend        func(childComplexity int) int
-		Postdate         func(childComplexity int) int
-		Propertycode     func(childComplexity int) int
-		Propertyname     func(childComplexity int) int
-		Sbalance         func(childComplexity int) int
-		Status           func(childComplexity int) int
+		Accrualenddate                   func(childComplexity int) int
+		Accrualstartdate                 func(childComplexity int) int
+		Balance                          func(childComplexity int) int
+		CapitalizedFee                   func(childComplexity int) int
+		CapitalizedInterest              func(childComplexity int) int
+		CapitalizedLoanAdministrationFee func(childComplexity int) int
+		CapitalizedOtherFees             func(childComplexity int) int
+		Commitment                       func(childComplexity int) int
+		DrawActualPrincipal              func(childComplexity int) int
+		Ebalance                         func(childComplexity int) int
+		GlPerioddate                     func(childComplexity int) int
+		Interest                         func(childComplexity int) int
+		LeverageActivity                 func(childComplexity int) int
+		LeverageBalance                  func(childComplexity int) int
+		LeverageInterest                 func(childComplexity int) int
+		Loancode                         func(childComplexity int) int
+		Loandesc                         func(childComplexity int) int
+		MaxHmy                           func(childComplexity int) int
+		Paymentnumber                    func(childComplexity int) int
+		Postdate                         func(childComplexity int) int
+		Propertycode                     func(childComplexity int) int
+		Propertyname                     func(childComplexity int) int
+		Sbalance                         func(childComplexity int) int
+		Status                           func(childComplexity int) int
 	}
 
 	LoanCashFlows struct {
@@ -102,18 +109,60 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
+	case "LoanCashFlow.accrualenddate":
+		if e.complexity.LoanCashFlow.Accrualenddate == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.Accrualenddate(childComplexity), true
+	case "LoanCashFlow.accrualstartdate":
+		if e.complexity.LoanCashFlow.Accrualstartdate == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.Accrualstartdate(childComplexity), true
 	case "LoanCashFlow.balance":
 		if e.complexity.LoanCashFlow.Balance == nil {
 			break
 		}
 
 		return e.complexity.LoanCashFlow.Balance(childComplexity), true
+	case "LoanCashFlow.capitalizedFee":
+		if e.complexity.LoanCashFlow.CapitalizedFee == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.CapitalizedFee(childComplexity), true
+	case "LoanCashFlow.capitalizedInterest":
+		if e.complexity.LoanCashFlow.CapitalizedInterest == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.CapitalizedInterest(childComplexity), true
+	case "LoanCashFlow.capitalizedLoanAdministrationFee":
+		if e.complexity.LoanCashFlow.CapitalizedLoanAdministrationFee == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.CapitalizedLoanAdministrationFee(childComplexity), true
+	case "LoanCashFlow.capitalizedOtherFees":
+		if e.complexity.LoanCashFlow.CapitalizedOtherFees == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.CapitalizedOtherFees(childComplexity), true
 	case "LoanCashFlow.commitment":
 		if e.complexity.LoanCashFlow.Commitment == nil {
 			break
 		}
 
 		return e.complexity.LoanCashFlow.Commitment(childComplexity), true
+	case "LoanCashFlow.drawActualPrincipal":
+		if e.complexity.LoanCashFlow.DrawActualPrincipal == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.DrawActualPrincipal(childComplexity), true
 	case "LoanCashFlow.ebalance":
 		if e.complexity.LoanCashFlow.Ebalance == nil {
 			break
@@ -150,12 +199,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.LoanCashFlow.LeverageInterest(childComplexity), true
-	case "LoanCashFlow.loanCode":
-		if e.complexity.LoanCashFlow.LoanCode == nil {
+	case "LoanCashFlow.loancode":
+		if e.complexity.LoanCashFlow.Loancode == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.LoanCode(childComplexity), true
+		return e.complexity.LoanCashFlow.Loancode(childComplexity), true
 	case "LoanCashFlow.loandesc":
 		if e.complexity.LoanCashFlow.Loandesc == nil {
 			break
@@ -168,12 +217,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.LoanCashFlow.MaxHmy(childComplexity), true
-	case "LoanCashFlow.periodend":
-		if e.complexity.LoanCashFlow.Periodend == nil {
+	case "LoanCashFlow.paymentnumber":
+		if e.complexity.LoanCashFlow.Paymentnumber == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Periodend(childComplexity), true
+		return e.complexity.LoanCashFlow.Paymentnumber(childComplexity), true
 	case "LoanCashFlow.postdate":
 		if e.complexity.LoanCashFlow.Postdate == nil {
 			break
@@ -406,14 +455,14 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _LoanCashFlow_loanCode(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_loancode(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_loanCode,
+		ec.fieldContext_LoanCashFlow_loancode,
 		func(ctx context.Context) (any, error) {
-			return obj.LoanCode, nil
+			return obj.Loancode, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -422,7 +471,7 @@ func (ec *executionContext) _LoanCashFlow_loanCode(ctx context.Context, field gr
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_loanCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_loancode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -464,6 +513,64 @@ func (ec *executionContext) fieldContext_LoanCashFlow_maxHmy(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _LoanCashFlow_accrualenddate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_accrualenddate,
+		func(ctx context.Context) (any, error) {
+			return obj.Accrualenddate, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_accrualenddate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_accrualstartdate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_accrualstartdate,
+		func(ctx context.Context) (any, error) {
+			return obj.Accrualstartdate, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_accrualstartdate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LoanCashFlow_balance(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -493,6 +600,122 @@ func (ec *executionContext) fieldContext_LoanCashFlow_balance(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _LoanCashFlow_capitalizedFee(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_capitalizedFee,
+		func(ctx context.Context) (any, error) {
+			return obj.CapitalizedFee, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_capitalizedFee(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_capitalizedInterest(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_capitalizedInterest,
+		func(ctx context.Context) (any, error) {
+			return obj.CapitalizedInterest, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_capitalizedInterest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_capitalizedLoanAdministrationFee(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_capitalizedLoanAdministrationFee,
+		func(ctx context.Context) (any, error) {
+			return obj.CapitalizedLoanAdministrationFee, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_capitalizedLoanAdministrationFee(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_capitalizedOtherFees(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_capitalizedOtherFees,
+		func(ctx context.Context) (any, error) {
+			return obj.CapitalizedOtherFees, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_capitalizedOtherFees(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LoanCashFlow_commitment(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -510,6 +733,35 @@ func (ec *executionContext) _LoanCashFlow_commitment(ctx context.Context, field 
 }
 
 func (ec *executionContext) fieldContext_LoanCashFlow_commitment(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_drawActualPrincipal(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_drawActualPrincipal,
+		func(ctx context.Context) (any, error) {
+			return obj.DrawActualPrincipal, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_drawActualPrincipal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -725,14 +977,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_loandesc(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_periodend(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_paymentnumber(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_periodend,
+		ec.fieldContext_LoanCashFlow_paymentnumber,
 		func(ctx context.Context) (any, error) {
-			return obj.Periodend, nil
+			return obj.Paymentnumber, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -741,7 +993,7 @@ func (ec *executionContext) _LoanCashFlow_periodend(ctx context.Context, field g
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_periodend(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_paymentnumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -910,7 +1162,7 @@ func (ec *executionContext) _LoanCashFlows_byLoanCode(ctx context.Context, field
 			return ec.resolvers.LoanCashFlows().ByLoanCode(ctx, obj, fc.Args["loanCode"].(string))
 		},
 		nil,
-		ec.marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ,
+		ec.marshalNLoanCashFlow2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ,
 		true,
 		true,
 	)
@@ -924,14 +1176,28 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "loanCode":
-				return ec.fieldContext_LoanCashFlow_loanCode(ctx, field)
+			case "loancode":
+				return ec.fieldContext_LoanCashFlow_loancode(ctx, field)
 			case "maxHmy":
 				return ec.fieldContext_LoanCashFlow_maxHmy(ctx, field)
+			case "accrualenddate":
+				return ec.fieldContext_LoanCashFlow_accrualenddate(ctx, field)
+			case "accrualstartdate":
+				return ec.fieldContext_LoanCashFlow_accrualstartdate(ctx, field)
 			case "balance":
 				return ec.fieldContext_LoanCashFlow_balance(ctx, field)
+			case "capitalizedFee":
+				return ec.fieldContext_LoanCashFlow_capitalizedFee(ctx, field)
+			case "capitalizedInterest":
+				return ec.fieldContext_LoanCashFlow_capitalizedInterest(ctx, field)
+			case "capitalizedLoanAdministrationFee":
+				return ec.fieldContext_LoanCashFlow_capitalizedLoanAdministrationFee(ctx, field)
+			case "capitalizedOtherFees":
+				return ec.fieldContext_LoanCashFlow_capitalizedOtherFees(ctx, field)
 			case "commitment":
 				return ec.fieldContext_LoanCashFlow_commitment(ctx, field)
+			case "drawActualPrincipal":
+				return ec.fieldContext_LoanCashFlow_drawActualPrincipal(ctx, field)
 			case "ebalance":
 				return ec.fieldContext_LoanCashFlow_ebalance(ctx, field)
 			case "glPerioddate":
@@ -946,8 +1212,8 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 				return ec.fieldContext_LoanCashFlow_leverageInterest(ctx, field)
 			case "loandesc":
 				return ec.fieldContext_LoanCashFlow_loandesc(ctx, field)
-			case "periodend":
-				return ec.fieldContext_LoanCashFlow_periodend(ctx, field)
+			case "paymentnumber":
+				return ec.fieldContext_LoanCashFlow_paymentnumber(ctx, field)
 			case "postdate":
 				return ec.fieldContext_LoanCashFlow_postdate(ctx, field)
 			case "propertycode":
@@ -986,7 +1252,7 @@ func (ec *executionContext) _Query_loanCashFlow(ctx context.Context, field graph
 			return ec.resolvers.Query().LoanCashFlow(ctx)
 		},
 		nil,
-		ec.marshalNLoanCashFlows2ᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows,
+		ec.marshalNLoanCashFlows2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows,
 		true,
 		true,
 	)
@@ -2582,17 +2848,31 @@ func (ec *executionContext) _LoanCashFlow(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LoanCashFlow")
-		case "loanCode":
-			out.Values[i] = ec._LoanCashFlow_loanCode(ctx, field, obj)
+		case "loancode":
+			out.Values[i] = ec._LoanCashFlow_loancode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "maxHmy":
 			out.Values[i] = ec._LoanCashFlow_maxHmy(ctx, field, obj)
+		case "accrualenddate":
+			out.Values[i] = ec._LoanCashFlow_accrualenddate(ctx, field, obj)
+		case "accrualstartdate":
+			out.Values[i] = ec._LoanCashFlow_accrualstartdate(ctx, field, obj)
 		case "balance":
 			out.Values[i] = ec._LoanCashFlow_balance(ctx, field, obj)
+		case "capitalizedFee":
+			out.Values[i] = ec._LoanCashFlow_capitalizedFee(ctx, field, obj)
+		case "capitalizedInterest":
+			out.Values[i] = ec._LoanCashFlow_capitalizedInterest(ctx, field, obj)
+		case "capitalizedLoanAdministrationFee":
+			out.Values[i] = ec._LoanCashFlow_capitalizedLoanAdministrationFee(ctx, field, obj)
+		case "capitalizedOtherFees":
+			out.Values[i] = ec._LoanCashFlow_capitalizedOtherFees(ctx, field, obj)
 		case "commitment":
 			out.Values[i] = ec._LoanCashFlow_commitment(ctx, field, obj)
+		case "drawActualPrincipal":
+			out.Values[i] = ec._LoanCashFlow_drawActualPrincipal(ctx, field, obj)
 		case "ebalance":
 			out.Values[i] = ec._LoanCashFlow_ebalance(ctx, field, obj)
 		case "glPerioddate":
@@ -2607,8 +2887,8 @@ func (ec *executionContext) _LoanCashFlow(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._LoanCashFlow_leverageInterest(ctx, field, obj)
 		case "loandesc":
 			out.Values[i] = ec._LoanCashFlow_loandesc(ctx, field, obj)
-		case "periodend":
-			out.Values[i] = ec._LoanCashFlow_periodend(ctx, field, obj)
+		case "paymentnumber":
+			out.Values[i] = ec._LoanCashFlow_paymentnumber(ctx, field, obj)
 		case "postdate":
 			out.Values[i] = ec._LoanCashFlow_postdate(ctx, field, obj)
 		case "propertycode":
@@ -3135,7 +3415,7 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LoanCashFlow) graphql.Marshaler {
+func (ec *executionContext) marshalNLoanCashFlow2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LoanCashFlow) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3159,7 +3439,7 @@ func (ec *executionContext) marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLoanCashFlow2ᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlow(ctx, sel, v[i])
+			ret[i] = ec.marshalNLoanCashFlow2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlow(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3179,7 +3459,7 @@ func (ec *executionContext) marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgr
 	return ret
 }
 
-func (ec *executionContext) marshalNLoanCashFlow2ᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlow(ctx context.Context, sel ast.SelectionSet, v *model.LoanCashFlow) graphql.Marshaler {
+func (ec *executionContext) marshalNLoanCashFlow2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlow(ctx context.Context, sel ast.SelectionSet, v *model.LoanCashFlow) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -3189,11 +3469,11 @@ func (ec *executionContext) marshalNLoanCashFlow2ᚖssotᚋapiᚋgraphqlᚋgraph
 	return ec._LoanCashFlow(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLoanCashFlows2ssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows(ctx context.Context, sel ast.SelectionSet, v model.LoanCashFlows) graphql.Marshaler {
+func (ec *executionContext) marshalNLoanCashFlows2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows(ctx context.Context, sel ast.SelectionSet, v model.LoanCashFlows) graphql.Marshaler {
 	return ec._LoanCashFlows(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLoanCashFlows2ᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows(ctx context.Context, sel ast.SelectionSet, v *model.LoanCashFlows) graphql.Marshaler {
+func (ec *executionContext) marshalNLoanCashFlows2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows(ctx context.Context, sel ast.SelectionSet, v *model.LoanCashFlows) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

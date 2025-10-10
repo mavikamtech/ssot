@@ -3,23 +3,30 @@
 package model
 
 type LoanCashFlow struct {
-	LoanCode         string   `json:"loanCode"`
-	MaxHmy           *string  `json:"maxHmy,omitempty"`
-	Balance          *float64 `json:"balance,omitempty"`
-	Commitment       *float64 `json:"commitment,omitempty"`
-	Ebalance         *float64 `json:"ebalance,omitempty"`
-	GlPerioddate     *string  `json:"glPerioddate,omitempty"`
-	Interest         *float64 `json:"interest,omitempty"`
-	LeverageActivity *float64 `json:"leverageActivity,omitempty"`
-	LeverageBalance  *float64 `json:"leverageBalance,omitempty"`
-	LeverageInterest *float64 `json:"leverageInterest,omitempty"`
-	Loandesc         *string  `json:"loandesc,omitempty"`
-	Periodend        *string  `json:"periodend,omitempty"`
-	Postdate         *string  `json:"postdate,omitempty"`
-	Propertycode     *string  `json:"propertycode,omitempty"`
-	Propertyname     *string  `json:"propertyname,omitempty"`
-	Sbalance         *float64 `json:"sbalance,omitempty"`
-	Status           *string  `json:"status,omitempty"`
+	Loancode                         string   `json:"loancode"`
+	MaxHmy                           *string  `json:"maxHmy,omitempty"`
+	Accrualenddate                   *string  `json:"accrualenddate,omitempty"`
+	Accrualstartdate                 *string  `json:"accrualstartdate,omitempty"`
+	Balance                          *float64 `json:"balance,omitempty"`
+	CapitalizedFee                   *float64 `json:"capitalizedFee,omitempty"`
+	CapitalizedInterest              *float64 `json:"capitalizedInterest,omitempty"`
+	CapitalizedLoanAdministrationFee *float64 `json:"capitalizedLoanAdministrationFee,omitempty"`
+	CapitalizedOtherFees             *float64 `json:"capitalizedOtherFees,omitempty"`
+	Commitment                       *float64 `json:"commitment,omitempty"`
+	DrawActualPrincipal              *float64 `json:"drawActualPrincipal,omitempty"`
+	Ebalance                         *float64 `json:"ebalance,omitempty"`
+	GlPerioddate                     *string  `json:"glPerioddate,omitempty"`
+	Interest                         *float64 `json:"interest,omitempty"`
+	LeverageActivity                 *float64 `json:"leverageActivity,omitempty"`
+	LeverageBalance                  *float64 `json:"leverageBalance,omitempty"`
+	LeverageInterest                 *float64 `json:"leverageInterest,omitempty"`
+	Loandesc                         *string  `json:"loandesc,omitempty"`
+	Paymentnumber                    *string  `json:"paymentnumber,omitempty"`
+	Postdate                         *string  `json:"postdate,omitempty"`
+	Propertycode                     *string  `json:"propertycode,omitempty"`
+	Propertyname                     *string  `json:"propertyname,omitempty"`
+	Sbalance                         *float64 `json:"sbalance,omitempty"`
+	Status                           *string  `json:"status,omitempty"`
 }
 
 type LoanCashFlows struct {

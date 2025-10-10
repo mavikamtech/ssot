@@ -1,9 +1,16 @@
 
 type LoanCashFlow {
-  loanCode: String!
+  loancode: String!
   maxHmy: String
+  accrualenddate: String
+  accrualstartdate: String
   balance: Float
+  capitalizedFee: Float
+  capitalizedInterest: Float
+  capitalizedLoanAdministrationFee: Float
+  capitalizedOtherFees: Float
   commitment: Float
+  drawActualPrincipal: Float
   ebalance: Float
   glPerioddate: String
   interest: Float
@@ -11,7 +18,7 @@ type LoanCashFlow {
   leverageBalance: Float
   leverageInterest: Float
   loandesc: String
-  periodend: String
+  paymentnumber: String
   postdate: String
   propertycode: String
   propertyname: String
