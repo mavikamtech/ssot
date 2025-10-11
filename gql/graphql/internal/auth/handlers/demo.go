@@ -1,25 +1,16 @@
-package auth
+package handlers
 
 import (
 	"encoding/json"
 	"net/http"
 
+	"ssot/gql/graphql/internal/auth"
+	"ssot/gql/graphql/internal/auth/tokens"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginResponse struct {
-	Token string `json:"token"`
-	User  *User  `json:"user"`
-}
-
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
+// Demo handlers - these are for testing purposes only and should not be used in production
 
 // Simple in-memory user store for demo purposes
 // In production, you should use a proper database
@@ -40,7 +31,7 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// LoginHandler handles user login
+// LoginHandler handles user login - FOR DEMO PURPOSES ONLY
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
@@ -48,11 +39,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var loginReq LoginRequest
+	var loginReq auth.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid JSON"})
+		json.NewEncoder(w).Encode(auth.ErrorResponse{Error: "Invalid JSON"})
 		return
 	}
 
@@ -61,12 +52,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if !exists || !CheckPasswordHash(loginReq.Password, hashedPassword) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid credentials"})
+		json.NewEncoder(w).Encode(auth.ErrorResponse{Error: "Invalid credentials"})
 		return
 	}
 
 	// Create user object
-	user := &User{
+	user := &auth.User{
 		ID:    "user-" + loginReq.Email, // Simple ID generation
 		Email: loginReq.Email,
 		Role:  "user", // Default role, you can implement role management
@@ -77,24 +68,31 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		user.Role = "admin"
 	}
 
-	// Generate JWT token
-	token, err := GenerateToken(user)
+	// Generate JWT token - convert to tokens.User type
+	tokenUser := &tokens.User{
+		ID:       user.ID,
+		Email:    user.Email,
+		Role:     user.Role,
+		Scope:    user.Scope,
+		ClientID: user.ClientID,
+	}
+	token, err := tokens.GenerateToken(tokenUser)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to generate token"})
+		json.NewEncoder(w).Encode(auth.ErrorResponse{Error: "Failed to generate token"})
 		return
 	}
 
 	// Return token and user info
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(LoginResponse{
+	json.NewEncoder(w).Encode(auth.LoginResponse{
 		Token: token,
 		User:  user,
 	})
 }
 
-// CreateUserHandler creates a new user (for demo purposes)
+// CreateUserHandler creates a new user - FOR DEMO PURPOSES ONLY
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
@@ -112,7 +110,7 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&createUserReq); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid JSON"})
+		json.NewEncoder(w).Encode(auth.ErrorResponse{Error: "Invalid JSON"})
 		return
 	}
 
@@ -120,7 +118,7 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	if _, exists := users[createUserReq.Email]; exists {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "User already exists"})
+		json.NewEncoder(w).Encode(auth.ErrorResponse{Error: "User already exists"})
 		return
 	}
 
@@ -129,7 +127,7 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to hash password"})
+		json.NewEncoder(w).Encode(auth.ErrorResponse{Error: "Failed to hash password"})
 		return
 	}
 
@@ -137,24 +135,31 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	users[createUserReq.Email] = hashedPassword
 
 	// Create user object
-	user := &User{
+	user := &auth.User{
 		ID:    "user-" + createUserReq.Email,
 		Email: createUserReq.Email,
 		Role:  createUserReq.Role,
 	}
 
-	// Generate JWT token
-	token, err := GenerateToken(user)
+	// Generate JWT token - convert to tokens.User type
+	tokenUser := &tokens.User{
+		ID:       user.ID,
+		Email:    user.Email,
+		Role:     user.Role,
+		Scope:    user.Scope,
+		ClientID: user.ClientID,
+	}
+	token, err := tokens.GenerateToken(tokenUser)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to generate token"})
+		json.NewEncoder(w).Encode(auth.ErrorResponse{Error: "Failed to generate token"})
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(LoginResponse{
+	json.NewEncoder(w).Encode(auth.LoginResponse{
 		Token: token,
 		User:  user,
 	})

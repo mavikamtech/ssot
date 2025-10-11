@@ -7,6 +7,7 @@ import (
 	"os"
 	"ssot/gql/graphql/graph"
 	"ssot/gql/graphql/internal/auth"
+	"ssot/gql/graphql/internal/auth/middleware"
 	"ssot/gql/graphql/internal/services"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -73,7 +74,7 @@ func main() {
 	mux.Handle("/", playground.Handler("GraphQL playground", "/query"))
 
 	// GraphQL endpoint with authentication middleware
-	mux.Handle("/query", auth.Middleware(srv))
+	mux.Handle("/query", middleware.Middleware(srv))
 
 	log.Printf("starting the server at :%s for GraphQL", port)
 	log.Printf("current environment: %s", auth.GetCurrentEnv())

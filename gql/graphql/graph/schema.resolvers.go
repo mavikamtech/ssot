@@ -7,13 +7,13 @@ package graph
 import (
 	"context"
 	"ssot/gql/graphql/graph/model"
-	"ssot/gql/graphql/internal/auth"
+	"ssot/gql/graphql/internal/auth/middleware"
 )
 
 // ByLoanCode is the resolver for the byLoanCode field.
 func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode string) ([]*model.LoanCashFlow, error) {
 	// Check authentication
-	_, err := auth.GetUserFromContext(ctx)
+	_, err := middleware.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanC
 // LoanCashFlow is the resolver for the loanCashFlow field.
 func (r *queryResolver) LoanCashFlow(ctx context.Context) (*model.LoanCashFlows, error) {
 	// Check authentication
-	_, err := auth.GetUserFromContext(ctx)
+	_, err := middleware.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
