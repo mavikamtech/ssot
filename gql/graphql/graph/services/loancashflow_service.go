@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"ssot/gql/graphql/graph/model"
-	"ssot/gql/graphql/internal/auth"
+	"ssot/gql/graphql/internal/auth/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -29,7 +29,7 @@ func NewLoanCashFlowService(client *dynamodb.Client, tableName string) *LoanCash
 }
 
 func (s *LoanCashFlowService) GetByLoanCode(ctx context.Context, loanCode string) ([]*model.LoanCashFlow, error) {
-	user, err := auth.GetUserFromContext(ctx)
+	user, err := middleware.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unauthorized: %w", err)
 	}
