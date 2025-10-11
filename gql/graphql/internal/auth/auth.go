@@ -303,52 +303,10 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Print all headers (for debugging)
-		fmt.Println("=== ALL REQUEST HEADERS ===")
-		for name, values := range r.Header {
-			for _, value := range values {
-				fmt.Printf("%s: %s\n", name, value)
-			}
-		}
-		fmt.Println("================================")
-
-		fmt.Println("x-amzn-oidc-data:", r.Header.Get("x-amzn-oidc-data"))
-		fmt.Println("x-amzn-oidc-identity:", r.Header.Get("x-amzn-oidc-identity"))
-		fmt.Println("x-amzn-oidc-accesstoken:", r.Header.Get("x-amzn-oidc-accesstoken"))
-
-		parts := strings.Split(r.Header.Get("x-amzn-oidc-data"), ".")
-
-		header, err := decodeSegment(parts[0])
-		if err != nil {
-			fmt.Println("Failed to decode header:", err)
-			return
-		}
-
-		payload, err := decodeSegment(parts[1])
-		if err != nil {
-			fmt.Println("Failed to decode payload:", err)
-			return
-		}
-
-		h, _ := json.MarshalIndent(header, "", "  ")
-		p, _ := json.MarshalIndent(payload, "", "  ")
-
-		fmt.Println("=== HEADER ===")
-		fmt.Println(string(h))
-		fmt.Println("\n=== PAYLOAD ===")
-		fmt.Println(string(p))
-
 		accessToken := r.Header.Get("X-Amzn-Oidc-Accesstoken")
 		if accessToken == "" {
 			http.Error(w, "No access token", http.StatusUnauthorized)
 			return
-		}
-
-		roles, err := extractRolesFromAccessToken(accessToken)
-		if err != nil {
-			fmt.Printf("Error extracting roles: %v\n", err)
-		} else {
-			fmt.Printf("User roles: %v\n", roles)
 		}
 
 		// Check for x-amzn-oidc-data header first
@@ -357,6 +315,8 @@ func Middleware(next http.Handler) http.Handler {
 			ctx := context.WithValue(r.Context(), UserContextKey, user)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
+		} else {
+			fmt.Printf("OIDC validation error: %v\n", err)
 		}
 
 		// Extract token from Authorization header
@@ -411,27 +371,4 @@ func decodeSegment(seg string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return result, nil
-}
-
-func extractRolesFromAccessToken(accessToken string) ([]string, error) {
-	parts := strings.Split(accessToken, ".")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid token format")
-	}
-
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, err
-	}
-
-	var claims struct {
-		Roles []string `json:"roles,omitempty"`
-		Aud   string   `json:"aud"`
-	}
-
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return nil, err
-	}
-
-	return claims.Roles, nil
 }
