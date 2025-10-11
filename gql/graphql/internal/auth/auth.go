@@ -209,18 +209,38 @@ func validateOIDCAuth(r *http.Request) (*User, error) {
 		return nil, errors.New("no OIDC data found")
 	}
 
-	// Validate JWT signature and parse token
-	token, err := jwt.Parse(oidcData, func(token *jwt.Token) (interface{}, error) {
-		// Get AWS region from environment or use default
+	// Parse token without signature verification first to get the issuer
+	token, _, err := new(jwt.Parser).ParseUnverified(oidcData, jwt.MapClaims{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse token: %v", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
+
+	issuer, ok := claims["iss"].(string)
+	if !ok {
+		return nil, errors.New("issuer not found in token")
+	}
+
+	// Determine JWKS URL based on issuer
+	var jwksURL string
+	if strings.Contains(issuer, "login.microsoftonline.com") {
+		// Microsoft Entra ID token
+		jwksURL = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
+	} else {
+		// Fall back to AWS ALB JWKS endpoint
 		region := os.Getenv("AWS_REGION")
 		if region == "" {
 			region = Region
 		}
+		jwksURL = fmt.Sprintf("https://public-keys.auth.elb.%s.amazonaws.com", region)
+	}
 
-		// Create JWKS URL for ALB OIDC endpoint
-		// ALB uses a different JWKS endpoint than Cognito
-		jwksURL := fmt.Sprintf("https://public-keys.auth.elb.%s.amazonaws.com", region)
-
+	// Now validate the token with proper signature verification
+	validatedToken, err := jwt.Parse(oidcData, func(token *jwt.Token) (interface{}, error) {
 		// Create JWKS from the resource at the given URL
 		jwks, err := keyfunc.Get(jwksURL, keyfunc.Options{})
 		if err != nil {
@@ -240,18 +260,18 @@ func validateOIDCAuth(r *http.Request) (*User, error) {
 		return nil, fmt.Errorf("failed to validate OIDC token signature: %v", err)
 	}
 
-	if !token.Valid {
+	if !validatedToken.Valid {
 		return nil, errors.New("invalid OIDC token")
 	}
 
 	// Extract claims from the validated token
-	claims, ok := token.Claims.(jwt.MapClaims)
+	validatedClaims, ok := validatedToken.Claims.(jwt.MapClaims)
 	if !ok {
 		return nil, errors.New("invalid token claims")
 	}
 
 	// Check if email field exists and is not empty
-	email, exists := claims["email"]
+	email, exists := validatedClaims["email"]
 	if !exists || email == "" {
 		return nil, errors.New("email not found in OIDC data")
 	}
@@ -262,23 +282,22 @@ func validateOIDCAuth(r *http.Request) (*User, error) {
 	}
 
 	// Validate token expiration
-	if exp, ok := claims["exp"].(float64); ok {
+	if exp, ok := validatedClaims["exp"].(float64); ok {
 		if time.Now().Unix() > int64(exp) {
 			return nil, errors.New("OIDC token has expired")
 		}
 	}
 
-	// Validate issuer if present
-	if iss, ok := claims["iss"].(string); ok {
-		expectedIssuerPattern := "amazonaws.com"
-		if !strings.Contains(iss, expectedIssuerPattern) {
+	// Validate issuer - now support both Microsoft and AWS patterns
+	if iss, ok := validatedClaims["iss"].(string); ok {
+		if !strings.Contains(iss, "amazonaws.com") && !strings.Contains(iss, "microsoftonline.com") {
 			return nil, fmt.Errorf("invalid issuer: %s", iss)
 		}
 	}
 
 	// Create user with the required scope
 	user := &User{
-		ID:       fmt.Sprintf("oidc-%v", claims["sub"]),
+		ID:       fmt.Sprintf("oidc-%v", validatedClaims["sub"]),
 		Email:    emailStr,
 		Role:     "user",
 		Scope:    "ssot:gql:loancashflow:read",
