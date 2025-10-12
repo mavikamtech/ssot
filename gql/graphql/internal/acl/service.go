@@ -92,11 +92,22 @@ func (s *ACLService) fetchAndMergeACL(ctx context.Context, email string) (*Merge
 		mergedPermissions[key] = value
 	}
 
+	// Step 4: Merge field filters (user filters take precedence)
+	groupFieldFilters := make(map[string]FieldFilter)
+	for _, groupRecord := range groupRecords {
+		for field, filter := range groupRecord.FieldFilters {
+			groupFieldFilters[field] = filter
+		}
+	}
+
+	mergedFieldFilters := MergeFieldFilters(userRecord.FieldFilters, groupFieldFilters)
+
 	return &MergedACL{
-		UserEmail:   email,
-		Permissions: mergedPermissions,
-		Groups:      userRecord.Groups,
-		CachedAt:    time.Now(),
+		UserEmail:    email,
+		Permissions:  mergedPermissions,
+		FieldFilters: mergedFieldFilters,
+		Groups:       userRecord.Groups,
+		CachedAt:     time.Now(),
 	}, nil
 }
 
@@ -140,10 +151,35 @@ func (s *ACLService) cleanExpiredEntries() {
 // CreateUser creates a new user ACL record
 func (s *ACLService) CreateUser(ctx context.Context, email string, groups []string, permissions map[string]string) error {
 	record := &ACLRecord{
-		PrincipalID: email,
-		Groups:      groups,
-		Permissions: permissions,
-		UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+		PrincipalID:  email,
+		Groups:       groups,
+		Permissions:  permissions,
+		FieldFilters: make(map[string]FieldFilter), // Initialize empty field filters
+		UpdatedAt:    time.Now().UTC().Format(time.RFC3339),
+	}
+
+	err := s.repo.PutUserRecord(ctx, record)
+	if err != nil {
+		return err
+	}
+
+	// Invalidate cache for this user
+	s.InvalidateCache(email)
+	return nil
+}
+
+// CreateUserWithFieldFilters creates a new user ACL record with field filters
+func (s *ACLService) CreateUserWithFieldFilters(ctx context.Context, email string, groups []string, permissions map[string]string, fieldFilters map[string]FieldFilter) error {
+	if fieldFilters == nil {
+		fieldFilters = make(map[string]FieldFilter)
+	}
+
+	record := &ACLRecord{
+		PrincipalID:  email,
+		Groups:       groups,
+		Permissions:  permissions,
+		FieldFilters: fieldFilters,
+		UpdatedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
 
 	err := s.repo.PutUserRecord(ctx, record)
@@ -163,10 +199,39 @@ func (s *ACLService) CreateGroup(ctx context.Context, groupName string, permissi
 	}
 
 	record := &ACLRecord{
-		PrincipalID: groupName,
-		Groups:      []string{}, // Groups don't have group memberships
-		Permissions: permissions,
-		UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+		PrincipalID:  groupName,
+		Groups:       []string{}, // Groups don't have group memberships
+		Permissions:  permissions,
+		FieldFilters: make(map[string]FieldFilter), // Initialize empty field filters
+		UpdatedAt:    time.Now().UTC().Format(time.RFC3339),
+	}
+
+	err := s.repo.PutGroupRecord(ctx, record)
+	if err != nil {
+		return err
+	}
+
+	// Invalidate all cache since group permissions affect multiple users
+	s.InvalidateAllCache()
+	return nil
+}
+
+// CreateGroupWithFieldFilters creates a new group ACL record with field filters
+func (s *ACLService) CreateGroupWithFieldFilters(ctx context.Context, groupName string, permissions map[string]string, fieldFilters map[string]FieldFilter) error {
+	if !isGroupName(groupName) {
+		groupName = "group:" + groupName
+	}
+
+	if fieldFilters == nil {
+		fieldFilters = make(map[string]FieldFilter)
+	}
+
+	record := &ACLRecord{
+		PrincipalID:  groupName,
+		Groups:       []string{}, // Groups don't have group memberships
+		Permissions:  permissions,
+		FieldFilters: fieldFilters,
+		UpdatedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
 
 	err := s.repo.PutGroupRecord(ctx, record)

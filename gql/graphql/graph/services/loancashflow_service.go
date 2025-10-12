@@ -66,6 +66,70 @@ func (s *LoanCashFlowService) GetByLoanCode(ctx context.Context, loanCode string
 	return loanCashFlows, nil
 }
 
+// GetByLoanCodeWithFieldFilters retrieves loan cash flows and applies field-level filtering
+func (s *LoanCashFlowService) GetByLoanCodeWithFieldFilters(ctx context.Context, loanCode string, columnPermissions *acl.ColumnPermissions, fieldFilters map[string]acl.FieldFilter) ([]*model.LoanCashFlow, error) {
+	// First get the data with column filtering
+	loanCashFlows, err := s.GetByLoanCode(ctx, loanCode, columnPermissions)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply field filters
+	if len(fieldFilters) == 0 {
+		return loanCashFlows, nil
+	}
+
+	// Convert to []interface{} for filtering
+	var dataInterface []interface{}
+	for _, loanCashFlow := range loanCashFlows {
+		dataInterface = append(dataInterface, loanCashFlow)
+	}
+
+	// Apply each field filter
+	for fieldName := range fieldFilters {
+		var getFieldValue func(interface{}) string
+
+		switch fieldName {
+		case "loancode":
+			getFieldValue = func(item interface{}) string {
+				if lcf, ok := item.(*model.LoanCashFlow); ok {
+					return lcf.Loancode
+				}
+				return ""
+			}
+		case "propertycode":
+			getFieldValue = func(item interface{}) string {
+				if lcf, ok := item.(*model.LoanCashFlow); ok && lcf.Propertycode != nil {
+					return *lcf.Propertycode
+				}
+				return ""
+			}
+		case "status":
+			getFieldValue = func(item interface{}) string {
+				if lcf, ok := item.(*model.LoanCashFlow); ok && lcf.Status != nil {
+					return *lcf.Status
+				}
+				return ""
+			}
+		default:
+			// Skip unknown fields
+			continue
+		}
+
+		dataInterface = acl.FilterArrayByField(dataInterface, fieldName, fieldFilters, getFieldValue)
+	}
+
+	// Convert back to []*model.LoanCashFlow
+	var filteredLoanCashFlows []*model.LoanCashFlow
+	for _, item := range dataInterface {
+		if lcf, ok := item.(*model.LoanCashFlow); ok {
+			filteredLoanCashFlows = append(filteredLoanCashFlows, lcf)
+		}
+	}
+
+	return filteredLoanCashFlows, nil
+}
+
 func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.AttributeValue, columnPermissions *acl.ColumnPermissions) (*model.LoanCashFlow, error) {
 	loanCashFlow := &model.LoanCashFlow{}
 

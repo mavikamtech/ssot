@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"ssot/gql/graphql/graph/model"
 	"ssot/gql/graphql/graph/services"
 	"ssot/gql/graphql/internal/auth/middleware"
@@ -27,8 +28,16 @@ func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanC
 		return nil, err
 	}
 
-	// Pass column permissions to the service for filtering
-	return r.ServiceManager.LoanCashFlowService.GetByLoanCode(ctx, loanCode, columnPermissions)
+	// Get field filters for array-level filtering
+	fieldFilters, err := r.ServiceManager.ACLMiddleware.GetFieldFilters(ctx)
+	if err != nil {
+		// If field filters fail, continue with column-only filtering
+		fmt.Printf("Warning: failed to get field filters: %v\n", err)
+		return r.ServiceManager.LoanCashFlowService.GetByLoanCode(ctx, loanCode, columnPermissions)
+	}
+
+	// Use the enhanced service method with field filtering
+	return r.ServiceManager.LoanCashFlowService.GetByLoanCodeWithFieldFilters(ctx, loanCode, columnPermissions, fieldFilters)
 }
 
 // LoanCashFlow is the resolver for the loanCashFlow field.

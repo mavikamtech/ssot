@@ -8,10 +8,19 @@ import (
 // Each entry contains the principal ID (email for users, group:name for groups)
 // and their associated permissions
 type ACLRecord struct {
-	PrincipalID string            `dynamodbav:"PrincipalID"` // "paul@mavik.com" or "group:admin"
-	Groups      []string          `dynamodbav:"Groups"`      // User's group memberships (empty for group entries)
-	Permissions map[string]string `dynamodbav:"Permissions"` // Permission mappings
-	UpdatedAt   string            `dynamodbav:"UpdatedAt"`   // Last update timestamp
+	PrincipalID  string                 `dynamodbav:"PrincipalID"`  // "paul@mavik.com" or "group:admin"
+	Groups       []string               `dynamodbav:"Groups"`       // User's group memberships (empty for group entries)
+	Permissions  map[string]string      `dynamodbav:"Permissions"`  // Permission mappings
+	FieldFilters map[string]FieldFilter `dynamodbav:"FieldFilters"` // Field-level include/exclude filters
+	UpdatedAt    string                 `dynamodbav:"UpdatedAt"`    // Last update timestamp
+}
+
+// FieldFilter defines include/exclude rules for specific field values
+type FieldFilter struct {
+	Field       string   `dynamodbav:"Field"`       // Field name (e.g., "loancode", "propertycode")
+	IncludeList []string `dynamodbav:"IncludeList"` // Values to include (empty means all allowed)
+	ExcludeList []string `dynamodbav:"ExcludeList"` // Values to exclude (takes precedence over include)
+	FilterType  string   `dynamodbav:"FilterType"`  // "include" or "exclude" for primary behavior
 }
 
 // PermissionAction defines the allowed actions
@@ -52,10 +61,11 @@ func NewCacheEntry(acl *ACLRecord, ttl time.Duration) *CacheEntry {
 
 // MergedACL represents the final ACL after merging user and group permissions
 type MergedACL struct {
-	UserEmail   string            // Original user email
-	Permissions map[string]string // All merged permissions
-	Groups      []string          // User's groups
-	CachedAt    time.Time         // When this was cached
+	UserEmail    string                 // Original user email
+	Permissions  map[string]string      // All merged permissions
+	FieldFilters map[string]FieldFilter // Merged field filters
+	Groups       []string               // User's groups
+	CachedAt     time.Time              // When this was cached
 }
 
 // ColumnPermissions represents column-level access control
@@ -148,4 +158,65 @@ func hasPermission(permission, action string) bool {
 	default:
 		return false
 	}
+}
+
+// IsValueAllowed checks if a specific field value passes the field filter rules
+func (ff *FieldFilter) IsValueAllowed(value string) bool {
+	// If exclude list contains the value, it's blocked
+	for _, excludeVal := range ff.ExcludeList {
+		if excludeVal == value {
+			return false
+		}
+	}
+
+	// If include list is empty, all values are allowed (unless excluded above)
+	if len(ff.IncludeList) == 0 {
+		return true
+	}
+
+	// If include list exists, value must be in it
+	for _, includeVal := range ff.IncludeList {
+		if includeVal == value {
+			return true
+		}
+	}
+
+	// Value not in include list
+	return false
+}
+
+// MergeFieldFilters combines user and group field filters, with user taking priority
+func MergeFieldFilters(userFilters, groupFilters map[string]FieldFilter) map[string]FieldFilter {
+	merged := make(map[string]FieldFilter)
+
+	// Start with group filters
+	for field, filter := range groupFilters {
+		merged[field] = filter
+	}
+
+	// User filters override group filters
+	for field, filter := range userFilters {
+		merged[field] = filter
+	}
+
+	return merged
+}
+
+// FilterArrayByField filters an array of items based on field filter rules
+func FilterArrayByField(items []interface{}, fieldName string, fieldFilters map[string]FieldFilter, getFieldValue func(interface{}) string) []interface{} {
+	// If no filter exists for this field, return all items
+	filter, exists := fieldFilters[fieldName]
+	if !exists {
+		return items
+	}
+
+	var filtered []interface{}
+	for _, item := range items {
+		value := getFieldValue(item)
+		if filter.IsValueAllowed(value) {
+			filtered = append(filtered, item)
+		}
+	}
+
+	return filtered
 }

@@ -248,3 +248,46 @@ func GetUserEmail(ctx context.Context) (string, error) {
 	}
 	return user.Email, nil
 }
+
+// GetFieldFilters retrieves the merged field filters for the current user
+func (m *ACLMiddleware) GetFieldFilters(ctx context.Context) (map[string]FieldFilter, error) {
+	// Get user from context
+	user, err := middleware.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("authentication required: %w", err)
+	}
+
+	// Get merged ACL for user
+	acl, err := m.service.GetMergedACL(ctx, user.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user permissions: %w", err)
+	}
+
+	return acl.FieldFilters, nil
+}
+
+// FilterDataByField filters an array of data based on field filter rules
+func (m *ACLMiddleware) FilterDataByField(ctx context.Context, data []interface{}, fieldName string, getFieldValue func(interface{}) string) ([]interface{}, error) {
+	fieldFilters, err := m.GetFieldFilters(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return FilterArrayByField(data, fieldName, fieldFilters, getFieldValue), nil
+}
+
+// CheckFieldValueAccess checks if a specific field value is allowed for the current user
+func (m *ACLMiddleware) CheckFieldValueAccess(ctx context.Context, fieldName, fieldValue string) (bool, error) {
+	fieldFilters, err := m.GetFieldFilters(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	filter, exists := fieldFilters[fieldName]
+	if !exists {
+		// No filter means all values are allowed
+		return true, nil
+	}
+
+	return filter.IsValueAllowed(fieldValue), nil
+}
