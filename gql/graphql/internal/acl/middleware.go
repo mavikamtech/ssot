@@ -54,9 +54,9 @@ func (m *ACLMiddleware) CheckWritePermission(ctx context.Context, table, column 
 }
 
 // RequirePermission is a decorator function that checks permissions before executing a resolver
-func (m *ACLMiddleware) RequirePermission(table, column, action string) func(next func(ctx context.Context) (interface{}, error)) func(ctx context.Context) (interface{}, error) {
-	return func(next func(ctx context.Context) (interface{}, error)) func(ctx context.Context) (interface{}, error) {
-		return func(ctx context.Context) (interface{}, error) {
+func (m *ACLMiddleware) RequirePermission(table, column, action string) func(next func(ctx context.Context) (any, error)) func(ctx context.Context) (any, error) {
+	return func(next func(ctx context.Context) (any, error)) func(ctx context.Context) (any, error) {
+		return func(ctx context.Context) (any, error) {
 			err := m.CheckPermission(ctx, table, column, action)
 			if err != nil {
 				return nil, err
@@ -67,12 +67,12 @@ func (m *ACLMiddleware) RequirePermission(table, column, action string) func(nex
 }
 
 // RequireRead is a convenience decorator for read permissions
-func (m *ACLMiddleware) RequireRead(table, column string) func(next func(ctx context.Context) (interface{}, error)) func(ctx context.Context) (interface{}, error) {
+func (m *ACLMiddleware) RequireRead(table, column string) func(next func(ctx context.Context) (any, error)) func(ctx context.Context) (any, error) {
 	return m.RequirePermission(table, column, "read")
 }
 
 // RequireWrite is a convenience decorator for write permissions
-func (m *ACLMiddleware) RequireWrite(table, column string) func(next func(ctx context.Context) (interface{}, error)) func(ctx context.Context) (interface{}, error) {
+func (m *ACLMiddleware) RequireWrite(table, column string) func(next func(ctx context.Context) (any, error)) func(ctx context.Context) (any, error) {
 	return m.RequirePermission(table, column, "write")
 }
 
@@ -267,7 +267,7 @@ func (m *ACLMiddleware) GetFieldFilters(ctx context.Context) (map[string]FieldFi
 }
 
 // FilterDataByField filters an array of data based on field filter rules
-func (m *ACLMiddleware) FilterDataByField(ctx context.Context, data []interface{}, fieldName string, getFieldValue func(interface{}) string) ([]interface{}, error) {
+func (m *ACLMiddleware) FilterDataByField(ctx context.Context, data []any, fieldName string, getFieldValue func(any) string) ([]any, error) {
 	fieldFilters, err := m.GetFieldFilters(ctx)
 	if err != nil {
 		return nil, err

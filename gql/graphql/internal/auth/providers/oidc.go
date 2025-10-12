@@ -38,7 +38,7 @@ func ValidateOIDCAuth(r *http.Request) (*User, error) {
 	}
 
 	// Parse the payload JSON
-	var claims map[string]interface{}
+	var claims map[string]any
 	if err := json.Unmarshal(payload, &claims); err != nil {
 		return nil, fmt.Errorf("failed to parse claims: %v", err)
 	}
@@ -65,7 +65,7 @@ func ValidateOIDCAuth(r *http.Request) (*User, error) {
 	jwksURL = fmt.Sprintf("https://public-keys.auth.elb.%s.amazonaws.com", region)
 
 	// Now validate the token with proper signature verification
-	validatedToken, err := jwt.Parse(oidcData, func(token *jwt.Token) (interface{}, error) {
+	validatedToken, err := jwt.Parse(oidcData, func(token *jwt.Token) (any, error) {
 		// Create JWKS from the resource at the given URL
 		jwks, err := keyfunc.Get(jwksURL, keyfunc.Options{})
 		if err != nil {
@@ -99,7 +99,7 @@ func ValidateOIDCAuth(r *http.Request) (*User, error) {
 }
 
 // validateMicrosoftToken validates a Microsoft Entra ID token (without signature verification for now)
-func validateMicrosoftToken(claims map[string]interface{}) (*User, error) {
+func validateMicrosoftToken(claims map[string]any) (*User, error) {
 	// Check if email field exists and is not empty
 	email, exists := claims["email"]
 	if !exists || email == "" {
@@ -123,7 +123,6 @@ func validateMicrosoftToken(claims map[string]interface{}) (*User, error) {
 		ID:       fmt.Sprintf("oidc-%v", claims["sub"]),
 		Email:    emailStr,
 		Role:     "user",
-		Scope:    "ssot:gql:loancashflow:read",
 		ClientID: "oidc-client",
 	}
 
@@ -131,7 +130,7 @@ func validateMicrosoftToken(claims map[string]interface{}) (*User, error) {
 }
 
 // createUserFromClaims creates a user from validated JWT claims
-func createUserFromClaims(claims map[string]interface{}) (*User, error) {
+func createUserFromClaims(claims map[string]any) (*User, error) {
 	// Check if email field exists and is not empty
 	email, exists := claims["email"]
 	if !exists || email == "" {

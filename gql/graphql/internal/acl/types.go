@@ -203,14 +203,14 @@ func MergeFieldFilters(userFilters, groupFilters map[string]FieldFilter) map[str
 }
 
 // FilterArrayByField filters an array of items based on field filter rules
-func FilterArrayByField(items []interface{}, fieldName string, fieldFilters map[string]FieldFilter, getFieldValue func(interface{}) string) []interface{} {
+func FilterArrayByField(items []any, fieldName string, fieldFilters map[string]FieldFilter, getFieldValue func(any) string) []any {
 	// If no filter exists for this field, return all items
 	filter, exists := fieldFilters[fieldName]
 	if !exists {
 		return items
 	}
 
-	var filtered []interface{}
+	var filtered []any
 	for _, item := range items {
 		value := getFieldValue(item)
 		if filter.IsValueAllowed(value) {

@@ -74,40 +74,26 @@ func (s *LoanCashFlowService) GetByLoanCodeWithFieldFilters(ctx context.Context,
 		return nil, err
 	}
 
+	fmt.Println("Applying field filters:", fieldFilters)
 	// Apply field filters
 	if len(fieldFilters) == 0 {
 		return loanCashFlows, nil
 	}
 
-	// Convert to []interface{} for filtering
-	var dataInterface []interface{}
+	// Convert to []any for filtering
+	var dataInterface []any
 	for _, loanCashFlow := range loanCashFlows {
 		dataInterface = append(dataInterface, loanCashFlow)
 	}
-
 	// Apply each field filter
 	for fieldName := range fieldFilters {
-		var getFieldValue func(interface{}) string
+		var getFieldValue func(any) string
 
 		switch fieldName {
 		case "loancode":
-			getFieldValue = func(item interface{}) string {
+			getFieldValue = func(item any) string {
 				if lcf, ok := item.(*model.LoanCashFlow); ok {
 					return lcf.Loancode
-				}
-				return ""
-			}
-		case "propertycode":
-			getFieldValue = func(item interface{}) string {
-				if lcf, ok := item.(*model.LoanCashFlow); ok && lcf.Propertycode != nil {
-					return *lcf.Propertycode
-				}
-				return ""
-			}
-		case "status":
-			getFieldValue = func(item interface{}) string {
-				if lcf, ok := item.(*model.LoanCashFlow); ok && lcf.Status != nil {
-					return *lcf.Status
 				}
 				return ""
 			}
