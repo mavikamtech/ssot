@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -26,12 +26,6 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		accessToken := r.Header.Get("X-Amzn-Oidc-Accesstoken")
-		if accessToken == "" {
-			http.Error(w, "No access token", http.StatusUnauthorized)
-			return
-		}
-
 		// Check for x-amzn-oidc-data header first
 		if user, err := providers.ValidateOIDCAuth(r); err == nil {
 			// Convert providers.User to auth.User
@@ -47,7 +41,7 @@ func Middleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		} else {
-			fmt.Printf("OIDC validation error: %v\n", err)
+			log.Printf("OIDC validation error: %v\n", err)
 		}
 
 		// Extract token from Authorization header

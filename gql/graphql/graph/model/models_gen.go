@@ -2,6 +2,47 @@
 
 package model
 
+type ACLMutationResult struct {
+	Success bool       `json:"success"`
+	Message string     `json:"message"`
+	Record  *ACLRecord `json:"record,omitempty"`
+}
+
+type ACLRecord struct {
+	PrincipalID  string         `json:"principalID"`
+	Groups       []string       `json:"groups"`
+	Permissions  []*Permission  `json:"permissions"`
+	FieldFilters []*FieldFilter `json:"fieldFilters"`
+	UpdatedAt    string         `json:"updatedAt"`
+}
+
+type AddGroupACLInput struct {
+	GroupName    string              `json:"groupName"`
+	Permissions  []*PermissionInput  `json:"permissions"`
+	FieldFilters []*FieldFilterInput `json:"fieldFilters,omitempty"`
+}
+
+type AddUserACLInput struct {
+	Email        string              `json:"email"`
+	Groups       []string            `json:"groups"`
+	Permissions  []*PermissionInput  `json:"permissions"`
+	FieldFilters []*FieldFilterInput `json:"fieldFilters,omitempty"`
+}
+
+type FieldFilter struct {
+	Field       string   `json:"field"`
+	IncludeList []string `json:"includeList"`
+	ExcludeList []string `json:"excludeList"`
+	FilterType  string   `json:"filterType"`
+}
+
+type FieldFilterInput struct {
+	Field       string   `json:"field"`
+	IncludeList []string `json:"includeList"`
+	ExcludeList []string `json:"excludeList"`
+	FilterType  string   `json:"filterType"`
+}
+
 type LoanCashFlow struct {
 	Loancode                         string   `json:"loancode"`
 	MaxHmy                           *string  `json:"maxHmy,omitempty"`
@@ -33,5 +74,35 @@ type LoanCashFlows struct {
 	ByLoanCode []*LoanCashFlow `json:"byLoanCode"`
 }
 
+type Mutation struct {
+}
+
+type Permission struct {
+	Table  string `json:"table"`
+	Action string `json:"action"`
+}
+
+type PermissionInput struct {
+	Table  string `json:"table"`
+	Action string `json:"action"`
+}
+
 type Query struct {
+}
+
+type SsotReportsAdministratorConfiguration struct {
+	ListACLRecords []*ACLRecord `json:"listACLRecords"`
+}
+
+type UpdateGroupACLInput struct {
+	GroupName    string              `json:"groupName"`
+	Permissions  []*PermissionInput  `json:"permissions"`
+	FieldFilters []*FieldFilterInput `json:"fieldFilters,omitempty"`
+}
+
+type UpdateUserACLInput struct {
+	Email        string              `json:"email"`
+	Groups       []string            `json:"groups,omitempty"`
+	Permissions  []*PermissionInput  `json:"permissions,omitempty"`
+	FieldFilters []*FieldFilterInput `json:"fieldFilters,omitempty"`
 }

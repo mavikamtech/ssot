@@ -104,24 +104,70 @@ email := claims["email"].(string)
 name  := claims["name"].(string)
 ```
 
-## 4. Access Control (ACL)
+## 4. Access Control (ACL) Management System
 
-### 4.1 Define ACL in AWS Secrets Manager
-Example secret ssot_acl.json (Example, not prod):
+### 4.1 Overview
+The SSOT GraphQL API now features a comprehensive ACL management system (implemented October 11, 2025) with:
 
-```json
-{
-  "LoanCashFlowReport": ["abc@mavikcapital.com"]
+- **Dynamic ACL Configuration**: GraphQL mutations for real-time permission management
+- **DynamoDB Backend**: Persistent storage with caching for performance
+- **Admin-Only Management**: Secure operations restricted to admin users
+- **Field-Level Filtering**: Granular data access control
+- **Admin Group Protection**: Prevents modification of admin privileges
+
+### 4.2 GraphQL ACL Management API
+
+**Admin users** can manage ACLs through GraphQL mutations:
+
+```graphql
+# Add/Update User ACL
+mutation {
+  addUserACL(input: {
+    email: "user@mavikcapital.com"
+    groups: ["group:analyst"]
+    permissions: [{ table: "LoanCashFlow", action: "read" }]
+    fieldFilters: [{
+      field: "loancode"
+      includeList: ["LOAN001", "LOAN002"]
+      filterType: "include"
+    }]
+  }) { success, message }
+}
+
+# List all ACL records (admin only)
+query {
+  ssotReportsAdministratorConfiguration {
+    listACLRecords {
+      principalID
+      groups
+      permissions { table, action }
+    }
+  }
 }
 ```
 
-### 4.2 Implement ACL Check
+### 4.3 Permission Model
+
+- **Table-Level**: `"TableName#*"` with actions: `read`, `write`, `readwrite`, `blocking`
+- **Field-Level**: Include/exclude loancode applied after table permissions
+- **Inheritance**: Users inherit from groups, user permissions override group permissions
+
+### 4.4 Security Implementation
+
 ```go
-if allowed, ok := acl[email]; ok && contains(allowed, project) {
-    return data
-}
-return errors.New("unauthorized access")
+// Admin-only access control
+func (m *ACLMiddleware) RequireAdminAccess(ctx context.Context) error
+
+// Permission checking in resolvers
+err := r.ServiceManager.ACLMiddleware.CheckReadPermission(ctx, "LoanCashFlow", "*")
 ```
+
+**Key Security Features:**
+- Only `group:admin` users can manage ACLs
+- Admin group cannot be assigned/modified/deleted via API
+- Real-time permission updates with caching (15min TTL)
+
+**Migration Note:** Upgraded from static AWS Secrets Manager to dynamic DynamoDB-based ACL system with GraphQL management interface.
 
 ### References
 
