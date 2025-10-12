@@ -7,6 +7,7 @@ import (
 
 	"ssot/gql/graphql/graph/model"
 	"ssot/gql/graphql/internal/acl"
+	"ssot/gql/graphql/internal/auth/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
