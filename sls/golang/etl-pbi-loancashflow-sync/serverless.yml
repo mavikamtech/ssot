@@ -22,6 +22,14 @@ functions:
     environment:
       ENDPOINT: https://api.powerbi.com
       SECRET_ENDPOINT: https://login.microsoftonline.com
-      DYNAMO_TABLE_NAME: pbi-loancashflow
+      DYNAMO_TABLE_NAME: pbi-loancashflow-prod
       POWERBI_APPLICATION_CONFIG_NAME: powerbi-application-config
       POWERBI_APPLICATION_SECRET_NAME: powerbi-application-secret
+
+    vpc:
+      securityGroupIds:
+        - sg-0ffeef1c57a795a0d
+      subnetIds:
+        - subnet-07a88fae33859673b
+        - subnet-0c869995323aac9f6
+    

@@ -40,6 +40,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	LoanCashFlows() LoanCashFlowsResolver
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -47,40 +48,96 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ACLMutationResult struct {
+		Message func(childComplexity int) int
+		Record  func(childComplexity int) int
+		Success func(childComplexity int) int
+	}
+
+	ACLRecord struct {
+		FieldFilters func(childComplexity int) int
+		Groups       func(childComplexity int) int
+		Permissions  func(childComplexity int) int
+		PrincipalID  func(childComplexity int) int
+		UpdatedAt    func(childComplexity int) int
+	}
+
+	FieldFilter struct {
+		ExcludeList func(childComplexity int) int
+		Field       func(childComplexity int) int
+		FilterType  func(childComplexity int) int
+		IncludeList func(childComplexity int) int
+	}
+
 	LoanCashFlow struct {
-		Balance          func(childComplexity int) int
-		Commitment       func(childComplexity int) int
-		Ebalance         func(childComplexity int) int
-		GlPerioddate     func(childComplexity int) int
-		Interest         func(childComplexity int) int
-		LeverageActivity func(childComplexity int) int
-		LeverageBalance  func(childComplexity int) int
-		LeverageInterest func(childComplexity int) int
-		LoanCode         func(childComplexity int) int
-		Loandesc         func(childComplexity int) int
-		MaxHmy           func(childComplexity int) int
-		Periodend        func(childComplexity int) int
-		Postdate         func(childComplexity int) int
-		Propertycode     func(childComplexity int) int
-		Propertyname     func(childComplexity int) int
-		Sbalance         func(childComplexity int) int
-		Status           func(childComplexity int) int
+		Accrualenddate                   func(childComplexity int) int
+		Accrualstartdate                 func(childComplexity int) int
+		Balance                          func(childComplexity int) int
+		CapitalizedFee                   func(childComplexity int) int
+		CapitalizedInterest              func(childComplexity int) int
+		CapitalizedLoanAdministrationFee func(childComplexity int) int
+		CapitalizedOtherFees             func(childComplexity int) int
+		Commitment                       func(childComplexity int) int
+		DrawActualPrincipal              func(childComplexity int) int
+		Ebalance                         func(childComplexity int) int
+		GlPerioddate                     func(childComplexity int) int
+		Interest                         func(childComplexity int) int
+		LeverageActivity                 func(childComplexity int) int
+		LeverageBalance                  func(childComplexity int) int
+		LeverageInterest                 func(childComplexity int) int
+		Loancode                         func(childComplexity int) int
+		Loandesc                         func(childComplexity int) int
+		MaxHmy                           func(childComplexity int) int
+		Paymentnumber                    func(childComplexity int) int
+		Postdate                         func(childComplexity int) int
+		Propertycode                     func(childComplexity int) int
+		Propertyname                     func(childComplexity int) int
+		Sbalance                         func(childComplexity int) int
+		Status                           func(childComplexity int) int
 	}
 
 	LoanCashFlows struct {
 		ByLoanCode func(childComplexity int, loanCode string) int
 	}
 
+	Mutation struct {
+		AddGroupACL    func(childComplexity int, input model.AddGroupACLInput) int
+		AddUserACL     func(childComplexity int, input model.AddUserACLInput) int
+		DeleteGroupACL func(childComplexity int, groupName string) int
+		DeleteUserACL  func(childComplexity int, email string) int
+		UpdateGroupACL func(childComplexity int, input model.UpdateGroupACLInput) int
+		UpdateUserACL  func(childComplexity int, input model.UpdateUserACLInput) int
+	}
+
+	Permission struct {
+		Action func(childComplexity int) int
+		Table  func(childComplexity int) int
+	}
+
 	Query struct {
-		LoanCashFlow func(childComplexity int) int
+		LoanCashFlow                          func(childComplexity int) int
+		SsotReportsAdministratorConfiguration func(childComplexity int) int
+	}
+
+	SsotReportsAdministratorConfiguration struct {
+		ListACLRecords func(childComplexity int) int
 	}
 }
 
 type LoanCashFlowsResolver interface {
 	ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode string) ([]*model.LoanCashFlow, error)
 }
+type MutationResolver interface {
+	AddUserACL(ctx context.Context, input model.AddUserACLInput) (*model.ACLMutationResult, error)
+	UpdateUserACL(ctx context.Context, input model.UpdateUserACLInput) (*model.ACLMutationResult, error)
+	AddGroupACL(ctx context.Context, input model.AddGroupACLInput) (*model.ACLMutationResult, error)
+	UpdateGroupACL(ctx context.Context, input model.UpdateGroupACLInput) (*model.ACLMutationResult, error)
+	DeleteUserACL(ctx context.Context, email string) (*model.ACLMutationResult, error)
+	DeleteGroupACL(ctx context.Context, groupName string) (*model.ACLMutationResult, error)
+}
 type QueryResolver interface {
 	LoanCashFlow(ctx context.Context) (*model.LoanCashFlows, error)
+	SsotReportsAdministratorConfiguration(ctx context.Context) (*model.SsotReportsAdministratorConfiguration, error)
 }
 
 type executableSchema struct {
@@ -102,18 +159,135 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
+	case "ACLMutationResult.message":
+		if e.complexity.ACLMutationResult.Message == nil {
+			break
+		}
+
+		return e.complexity.ACLMutationResult.Message(childComplexity), true
+	case "ACLMutationResult.record":
+		if e.complexity.ACLMutationResult.Record == nil {
+			break
+		}
+
+		return e.complexity.ACLMutationResult.Record(childComplexity), true
+	case "ACLMutationResult.success":
+		if e.complexity.ACLMutationResult.Success == nil {
+			break
+		}
+
+		return e.complexity.ACLMutationResult.Success(childComplexity), true
+
+	case "ACLRecord.fieldFilters":
+		if e.complexity.ACLRecord.FieldFilters == nil {
+			break
+		}
+
+		return e.complexity.ACLRecord.FieldFilters(childComplexity), true
+	case "ACLRecord.groups":
+		if e.complexity.ACLRecord.Groups == nil {
+			break
+		}
+
+		return e.complexity.ACLRecord.Groups(childComplexity), true
+	case "ACLRecord.permissions":
+		if e.complexity.ACLRecord.Permissions == nil {
+			break
+		}
+
+		return e.complexity.ACLRecord.Permissions(childComplexity), true
+	case "ACLRecord.principalID":
+		if e.complexity.ACLRecord.PrincipalID == nil {
+			break
+		}
+
+		return e.complexity.ACLRecord.PrincipalID(childComplexity), true
+	case "ACLRecord.updatedAt":
+		if e.complexity.ACLRecord.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.ACLRecord.UpdatedAt(childComplexity), true
+
+	case "FieldFilter.excludeList":
+		if e.complexity.FieldFilter.ExcludeList == nil {
+			break
+		}
+
+		return e.complexity.FieldFilter.ExcludeList(childComplexity), true
+	case "FieldFilter.field":
+		if e.complexity.FieldFilter.Field == nil {
+			break
+		}
+
+		return e.complexity.FieldFilter.Field(childComplexity), true
+	case "FieldFilter.filterType":
+		if e.complexity.FieldFilter.FilterType == nil {
+			break
+		}
+
+		return e.complexity.FieldFilter.FilterType(childComplexity), true
+	case "FieldFilter.includeList":
+		if e.complexity.FieldFilter.IncludeList == nil {
+			break
+		}
+
+		return e.complexity.FieldFilter.IncludeList(childComplexity), true
+
+	case "LoanCashFlow.accrualenddate":
+		if e.complexity.LoanCashFlow.Accrualenddate == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.Accrualenddate(childComplexity), true
+	case "LoanCashFlow.accrualstartdate":
+		if e.complexity.LoanCashFlow.Accrualstartdate == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.Accrualstartdate(childComplexity), true
 	case "LoanCashFlow.balance":
 		if e.complexity.LoanCashFlow.Balance == nil {
 			break
 		}
 
 		return e.complexity.LoanCashFlow.Balance(childComplexity), true
+	case "LoanCashFlow.capitalizedFee":
+		if e.complexity.LoanCashFlow.CapitalizedFee == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.CapitalizedFee(childComplexity), true
+	case "LoanCashFlow.capitalizedInterest":
+		if e.complexity.LoanCashFlow.CapitalizedInterest == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.CapitalizedInterest(childComplexity), true
+	case "LoanCashFlow.capitalizedLoanAdministrationFee":
+		if e.complexity.LoanCashFlow.CapitalizedLoanAdministrationFee == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.CapitalizedLoanAdministrationFee(childComplexity), true
+	case "LoanCashFlow.capitalizedOtherFees":
+		if e.complexity.LoanCashFlow.CapitalizedOtherFees == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.CapitalizedOtherFees(childComplexity), true
 	case "LoanCashFlow.commitment":
 		if e.complexity.LoanCashFlow.Commitment == nil {
 			break
 		}
 
 		return e.complexity.LoanCashFlow.Commitment(childComplexity), true
+	case "LoanCashFlow.drawActualPrincipal":
+		if e.complexity.LoanCashFlow.DrawActualPrincipal == nil {
+			break
+		}
+
+		return e.complexity.LoanCashFlow.DrawActualPrincipal(childComplexity), true
 	case "LoanCashFlow.ebalance":
 		if e.complexity.LoanCashFlow.Ebalance == nil {
 			break
@@ -150,12 +324,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.LoanCashFlow.LeverageInterest(childComplexity), true
-	case "LoanCashFlow.loanCode":
-		if e.complexity.LoanCashFlow.LoanCode == nil {
+	case "LoanCashFlow.loancode":
+		if e.complexity.LoanCashFlow.Loancode == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.LoanCode(childComplexity), true
+		return e.complexity.LoanCashFlow.Loancode(childComplexity), true
 	case "LoanCashFlow.loandesc":
 		if e.complexity.LoanCashFlow.Loandesc == nil {
 			break
@@ -168,12 +342,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.LoanCashFlow.MaxHmy(childComplexity), true
-	case "LoanCashFlow.periodend":
-		if e.complexity.LoanCashFlow.Periodend == nil {
+	case "LoanCashFlow.paymentnumber":
+		if e.complexity.LoanCashFlow.Paymentnumber == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Periodend(childComplexity), true
+		return e.complexity.LoanCashFlow.Paymentnumber(childComplexity), true
 	case "LoanCashFlow.postdate":
 		if e.complexity.LoanCashFlow.Postdate == nil {
 			break
@@ -217,12 +391,105 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.LoanCashFlows.ByLoanCode(childComplexity, args["loanCode"].(string)), true
 
+	case "Mutation.addGroupACL":
+		if e.complexity.Mutation.AddGroupACL == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addGroupACL_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddGroupACL(childComplexity, args["input"].(model.AddGroupACLInput)), true
+	case "Mutation.addUserACL":
+		if e.complexity.Mutation.AddUserACL == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addUserACL_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddUserACL(childComplexity, args["input"].(model.AddUserACLInput)), true
+	case "Mutation.deleteGroupACL":
+		if e.complexity.Mutation.DeleteGroupACL == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteGroupACL_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteGroupACL(childComplexity, args["groupName"].(string)), true
+	case "Mutation.deleteUserACL":
+		if e.complexity.Mutation.DeleteUserACL == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteUserACL_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteUserACL(childComplexity, args["email"].(string)), true
+	case "Mutation.updateGroupACL":
+		if e.complexity.Mutation.UpdateGroupACL == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateGroupACL_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateGroupACL(childComplexity, args["input"].(model.UpdateGroupACLInput)), true
+	case "Mutation.updateUserACL":
+		if e.complexity.Mutation.UpdateUserACL == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUserACL_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateUserACL(childComplexity, args["input"].(model.UpdateUserACLInput)), true
+
+	case "Permission.action":
+		if e.complexity.Permission.Action == nil {
+			break
+		}
+
+		return e.complexity.Permission.Action(childComplexity), true
+	case "Permission.table":
+		if e.complexity.Permission.Table == nil {
+			break
+		}
+
+		return e.complexity.Permission.Table(childComplexity), true
+
 	case "Query.loanCashFlow":
 		if e.complexity.Query.LoanCashFlow == nil {
 			break
 		}
 
 		return e.complexity.Query.LoanCashFlow(childComplexity), true
+	case "Query.ssotReportsAdministratorConfiguration":
+		if e.complexity.Query.SsotReportsAdministratorConfiguration == nil {
+			break
+		}
+
+		return e.complexity.Query.SsotReportsAdministratorConfiguration(childComplexity), true
+
+	case "SsotReportsAdministratorConfiguration.listACLRecords":
+		if e.complexity.SsotReportsAdministratorConfiguration.ListACLRecords == nil {
+			break
+		}
+
+		return e.complexity.SsotReportsAdministratorConfiguration.ListACLRecords(childComplexity), true
 
 	}
 	return 0, false
@@ -231,7 +498,14 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
-	inputUnmarshalMap := graphql.BuildUnmarshalerMap()
+	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputAddGroupACLInput,
+		ec.unmarshalInputAddUserACLInput,
+		ec.unmarshalInputFieldFilterInput,
+		ec.unmarshalInputPermissionInput,
+		ec.unmarshalInputUpdateGroupACLInput,
+		ec.unmarshalInputUpdateUserACLInput,
+	)
 	first := true
 
 	switch opCtx.Operation.Operation {
@@ -264,6 +538,21 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 
 			return &response
+		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
+			data := ec._Mutation(ctx, opCtx.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
 		}
 
 	default:
@@ -343,6 +632,72 @@ func (ec *executionContext) field_LoanCashFlows_byLoanCode_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_addGroupACL_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNAddGroupACLInput2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐAddGroupACLInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addUserACL_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNAddUserACLInput2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐAddUserACLInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteGroupACL_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "groupName", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["groupName"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteUserACL_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "email", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["email"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateGroupACL_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateGroupACLInput2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐUpdateGroupACLInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUserACL_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateUserACLInput2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐUpdateUserACLInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -406,14 +761,43 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _LoanCashFlow_loanCode(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _ACLMutationResult_success(ctx context.Context, field graphql.CollectedField, obj *model.ACLMutationResult) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_loanCode,
+		ec.fieldContext_ACLMutationResult_success,
 		func(ctx context.Context) (any, error) {
-			return obj.LoanCode, nil
+			return obj.Success, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ACLMutationResult_success(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ACLMutationResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ACLMutationResult_message(ctx context.Context, field graphql.CollectedField, obj *model.ACLMutationResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ACLMutationResult_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -422,7 +806,354 @@ func (ec *executionContext) _LoanCashFlow_loanCode(ctx context.Context, field gr
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_loanCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ACLMutationResult_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ACLMutationResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ACLMutationResult_record(ctx context.Context, field graphql.CollectedField, obj *model.ACLMutationResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ACLMutationResult_record,
+		func(ctx context.Context) (any, error) {
+			return obj.Record, nil
+		},
+		nil,
+		ec.marshalOACLRecord2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLRecord,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ACLMutationResult_record(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ACLMutationResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "principalID":
+				return ec.fieldContext_ACLRecord_principalID(ctx, field)
+			case "groups":
+				return ec.fieldContext_ACLRecord_groups(ctx, field)
+			case "permissions":
+				return ec.fieldContext_ACLRecord_permissions(ctx, field)
+			case "fieldFilters":
+				return ec.fieldContext_ACLRecord_fieldFilters(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ACLRecord_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ACLRecord", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ACLRecord_principalID(ctx context.Context, field graphql.CollectedField, obj *model.ACLRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ACLRecord_principalID,
+		func(ctx context.Context) (any, error) {
+			return obj.PrincipalID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ACLRecord_principalID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ACLRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ACLRecord_groups(ctx context.Context, field graphql.CollectedField, obj *model.ACLRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ACLRecord_groups,
+		func(ctx context.Context) (any, error) {
+			return obj.Groups, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ACLRecord_groups(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ACLRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ACLRecord_permissions(ctx context.Context, field graphql.CollectedField, obj *model.ACLRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ACLRecord_permissions,
+		func(ctx context.Context) (any, error) {
+			return obj.Permissions, nil
+		},
+		nil,
+		ec.marshalNPermission2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ACLRecord_permissions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ACLRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "table":
+				return ec.fieldContext_Permission_table(ctx, field)
+			case "action":
+				return ec.fieldContext_Permission_action(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Permission", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ACLRecord_fieldFilters(ctx context.Context, field graphql.CollectedField, obj *model.ACLRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ACLRecord_fieldFilters,
+		func(ctx context.Context) (any, error) {
+			return obj.FieldFilters, nil
+		},
+		nil,
+		ec.marshalNFieldFilter2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ACLRecord_fieldFilters(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ACLRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "field":
+				return ec.fieldContext_FieldFilter_field(ctx, field)
+			case "includeList":
+				return ec.fieldContext_FieldFilter_includeList(ctx, field)
+			case "excludeList":
+				return ec.fieldContext_FieldFilter_excludeList(ctx, field)
+			case "filterType":
+				return ec.fieldContext_FieldFilter_filterType(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FieldFilter", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ACLRecord_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.ACLRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ACLRecord_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ACLRecord_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ACLRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FieldFilter_field(ctx context.Context, field graphql.CollectedField, obj *model.FieldFilter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FieldFilter_field,
+		func(ctx context.Context) (any, error) {
+			return obj.Field, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FieldFilter_field(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FieldFilter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FieldFilter_includeList(ctx context.Context, field graphql.CollectedField, obj *model.FieldFilter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FieldFilter_includeList,
+		func(ctx context.Context) (any, error) {
+			return obj.IncludeList, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FieldFilter_includeList(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FieldFilter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FieldFilter_excludeList(ctx context.Context, field graphql.CollectedField, obj *model.FieldFilter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FieldFilter_excludeList,
+		func(ctx context.Context) (any, error) {
+			return obj.ExcludeList, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FieldFilter_excludeList(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FieldFilter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FieldFilter_filterType(ctx context.Context, field graphql.CollectedField, obj *model.FieldFilter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FieldFilter_filterType,
+		func(ctx context.Context) (any, error) {
+			return obj.FilterType, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FieldFilter_filterType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FieldFilter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_loancode(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_loancode,
+		func(ctx context.Context) (any, error) {
+			return obj.Loancode, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_loancode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -464,6 +1195,64 @@ func (ec *executionContext) fieldContext_LoanCashFlow_maxHmy(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _LoanCashFlow_accrualenddate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_accrualenddate,
+		func(ctx context.Context) (any, error) {
+			return obj.Accrualenddate, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_accrualenddate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_accrualstartdate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_accrualstartdate,
+		func(ctx context.Context) (any, error) {
+			return obj.Accrualstartdate, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_accrualstartdate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LoanCashFlow_balance(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -493,6 +1282,122 @@ func (ec *executionContext) fieldContext_LoanCashFlow_balance(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _LoanCashFlow_capitalizedFee(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_capitalizedFee,
+		func(ctx context.Context) (any, error) {
+			return obj.CapitalizedFee, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_capitalizedFee(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_capitalizedInterest(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_capitalizedInterest,
+		func(ctx context.Context) (any, error) {
+			return obj.CapitalizedInterest, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_capitalizedInterest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_capitalizedLoanAdministrationFee(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_capitalizedLoanAdministrationFee,
+		func(ctx context.Context) (any, error) {
+			return obj.CapitalizedLoanAdministrationFee, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_capitalizedLoanAdministrationFee(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_capitalizedOtherFees(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_capitalizedOtherFees,
+		func(ctx context.Context) (any, error) {
+			return obj.CapitalizedOtherFees, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_capitalizedOtherFees(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LoanCashFlow_commitment(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -510,6 +1415,35 @@ func (ec *executionContext) _LoanCashFlow_commitment(ctx context.Context, field 
 }
 
 func (ec *executionContext) fieldContext_LoanCashFlow_commitment(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoanCashFlow",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoanCashFlow_drawActualPrincipal(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LoanCashFlow_drawActualPrincipal,
+		func(ctx context.Context) (any, error) {
+			return obj.DrawActualPrincipal, nil
+		},
+		nil,
+		ec.marshalOFloat2ᚖfloat64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LoanCashFlow_drawActualPrincipal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -725,14 +1659,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_loandesc(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_periodend(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_paymentnumber(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_periodend,
+		ec.fieldContext_LoanCashFlow_paymentnumber,
 		func(ctx context.Context) (any, error) {
-			return obj.Periodend, nil
+			return obj.Paymentnumber, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -741,7 +1675,7 @@ func (ec *executionContext) _LoanCashFlow_periodend(ctx context.Context, field g
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_periodend(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_paymentnumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -910,7 +1844,7 @@ func (ec *executionContext) _LoanCashFlows_byLoanCode(ctx context.Context, field
 			return ec.resolvers.LoanCashFlows().ByLoanCode(ctx, obj, fc.Args["loanCode"].(string))
 		},
 		nil,
-		ec.marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ,
+		ec.marshalNLoanCashFlow2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ,
 		true,
 		true,
 	)
@@ -924,14 +1858,28 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "loanCode":
-				return ec.fieldContext_LoanCashFlow_loanCode(ctx, field)
+			case "loancode":
+				return ec.fieldContext_LoanCashFlow_loancode(ctx, field)
 			case "maxHmy":
 				return ec.fieldContext_LoanCashFlow_maxHmy(ctx, field)
+			case "accrualenddate":
+				return ec.fieldContext_LoanCashFlow_accrualenddate(ctx, field)
+			case "accrualstartdate":
+				return ec.fieldContext_LoanCashFlow_accrualstartdate(ctx, field)
 			case "balance":
 				return ec.fieldContext_LoanCashFlow_balance(ctx, field)
+			case "capitalizedFee":
+				return ec.fieldContext_LoanCashFlow_capitalizedFee(ctx, field)
+			case "capitalizedInterest":
+				return ec.fieldContext_LoanCashFlow_capitalizedInterest(ctx, field)
+			case "capitalizedLoanAdministrationFee":
+				return ec.fieldContext_LoanCashFlow_capitalizedLoanAdministrationFee(ctx, field)
+			case "capitalizedOtherFees":
+				return ec.fieldContext_LoanCashFlow_capitalizedOtherFees(ctx, field)
 			case "commitment":
 				return ec.fieldContext_LoanCashFlow_commitment(ctx, field)
+			case "drawActualPrincipal":
+				return ec.fieldContext_LoanCashFlow_drawActualPrincipal(ctx, field)
 			case "ebalance":
 				return ec.fieldContext_LoanCashFlow_ebalance(ctx, field)
 			case "glPerioddate":
@@ -946,8 +1894,8 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 				return ec.fieldContext_LoanCashFlow_leverageInterest(ctx, field)
 			case "loandesc":
 				return ec.fieldContext_LoanCashFlow_loandesc(ctx, field)
-			case "periodend":
-				return ec.fieldContext_LoanCashFlow_periodend(ctx, field)
+			case "paymentnumber":
+				return ec.fieldContext_LoanCashFlow_paymentnumber(ctx, field)
 			case "postdate":
 				return ec.fieldContext_LoanCashFlow_postdate(ctx, field)
 			case "propertycode":
@@ -976,6 +1924,358 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_addUserACL(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_addUserACL,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().AddUserACL(ctx, fc.Args["input"].(model.AddUserACLInput))
+		},
+		nil,
+		ec.marshalNACLMutationResult2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLMutationResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_addUserACL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_ACLMutationResult_success(ctx, field)
+			case "message":
+				return ec.fieldContext_ACLMutationResult_message(ctx, field)
+			case "record":
+				return ec.fieldContext_ACLMutationResult_record(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ACLMutationResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addUserACL_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateUserACL(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateUserACL,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().UpdateUserACL(ctx, fc.Args["input"].(model.UpdateUserACLInput))
+		},
+		nil,
+		ec.marshalNACLMutationResult2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLMutationResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateUserACL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_ACLMutationResult_success(ctx, field)
+			case "message":
+				return ec.fieldContext_ACLMutationResult_message(ctx, field)
+			case "record":
+				return ec.fieldContext_ACLMutationResult_record(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ACLMutationResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateUserACL_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_addGroupACL(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_addGroupACL,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().AddGroupACL(ctx, fc.Args["input"].(model.AddGroupACLInput))
+		},
+		nil,
+		ec.marshalNACLMutationResult2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLMutationResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_addGroupACL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_ACLMutationResult_success(ctx, field)
+			case "message":
+				return ec.fieldContext_ACLMutationResult_message(ctx, field)
+			case "record":
+				return ec.fieldContext_ACLMutationResult_record(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ACLMutationResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addGroupACL_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateGroupACL(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateGroupACL,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().UpdateGroupACL(ctx, fc.Args["input"].(model.UpdateGroupACLInput))
+		},
+		nil,
+		ec.marshalNACLMutationResult2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLMutationResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateGroupACL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_ACLMutationResult_success(ctx, field)
+			case "message":
+				return ec.fieldContext_ACLMutationResult_message(ctx, field)
+			case "record":
+				return ec.fieldContext_ACLMutationResult_record(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ACLMutationResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateGroupACL_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteUserACL(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteUserACL,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().DeleteUserACL(ctx, fc.Args["email"].(string))
+		},
+		nil,
+		ec.marshalNACLMutationResult2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLMutationResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteUserACL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_ACLMutationResult_success(ctx, field)
+			case "message":
+				return ec.fieldContext_ACLMutationResult_message(ctx, field)
+			case "record":
+				return ec.fieldContext_ACLMutationResult_record(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ACLMutationResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteUserACL_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteGroupACL(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteGroupACL,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().DeleteGroupACL(ctx, fc.Args["groupName"].(string))
+		},
+		nil,
+		ec.marshalNACLMutationResult2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLMutationResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteGroupACL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_ACLMutationResult_success(ctx, field)
+			case "message":
+				return ec.fieldContext_ACLMutationResult_message(ctx, field)
+			case "record":
+				return ec.fieldContext_ACLMutationResult_record(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ACLMutationResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteGroupACL_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Permission_table(ctx context.Context, field graphql.CollectedField, obj *model.Permission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Permission_table,
+		func(ctx context.Context) (any, error) {
+			return obj.Table, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Permission_table(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Permission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Permission_action(ctx context.Context, field graphql.CollectedField, obj *model.Permission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Permission_action,
+		func(ctx context.Context) (any, error) {
+			return obj.Action, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Permission_action(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Permission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_loanCashFlow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -986,7 +2286,7 @@ func (ec *executionContext) _Query_loanCashFlow(ctx context.Context, field graph
 			return ec.resolvers.Query().LoanCashFlow(ctx)
 		},
 		nil,
-		ec.marshalNLoanCashFlows2ᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows,
+		ec.marshalNLoanCashFlows2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows,
 		true,
 		true,
 	)
@@ -1004,6 +2304,39 @@ func (ec *executionContext) fieldContext_Query_loanCashFlow(_ context.Context, f
 				return ec.fieldContext_LoanCashFlows_byLoanCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LoanCashFlows", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_ssotReportsAdministratorConfiguration(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_ssotReportsAdministratorConfiguration,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().SsotReportsAdministratorConfiguration(ctx)
+		},
+		nil,
+		ec.marshalNSsotReportsAdministratorConfiguration2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐSsotReportsAdministratorConfiguration,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_ssotReportsAdministratorConfiguration(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "listACLRecords":
+				return ec.fieldContext_SsotReportsAdministratorConfiguration_listACLRecords(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SsotReportsAdministratorConfiguration", field.Name)
 		},
 	}
 	return fc, nil
@@ -1112,6 +2445,47 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SsotReportsAdministratorConfiguration_listACLRecords(ctx context.Context, field graphql.CollectedField, obj *model.SsotReportsAdministratorConfiguration) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SsotReportsAdministratorConfiguration_listACLRecords,
+		func(ctx context.Context) (any, error) {
+			return obj.ListACLRecords, nil
+		},
+		nil,
+		ec.marshalNACLRecord2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLRecordᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SsotReportsAdministratorConfiguration_listACLRecords(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SsotReportsAdministratorConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "principalID":
+				return ec.fieldContext_ACLRecord_principalID(ctx, field)
+			case "groups":
+				return ec.fieldContext_ACLRecord_groups(ctx, field)
+			case "permissions":
+				return ec.fieldContext_ACLRecord_permissions(ctx, field)
+			case "fieldFilters":
+				return ec.fieldContext_ACLRecord_fieldFilters(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ACLRecord_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ACLRecord", field.Name)
 		},
 	}
 	return fc, nil
@@ -2563,6 +3937,266 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAddGroupACLInput(ctx context.Context, obj any) (model.AddGroupACLInput, error) {
+	var it model.AddGroupACLInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"groupName", "permissions", "fieldFilters"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "groupName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GroupName = data
+		case "permissions":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("permissions"))
+			data, err := ec.unmarshalNPermissionInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Permissions = data
+		case "fieldFilters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldFilters"))
+			data, err := ec.unmarshalOFieldFilterInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FieldFilters = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputAddUserACLInput(ctx context.Context, obj any) (model.AddUserACLInput, error) {
+	var it model.AddUserACLInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"email", "groups", "permissions", "fieldFilters"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "groups":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groups"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Groups = data
+		case "permissions":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("permissions"))
+			data, err := ec.unmarshalNPermissionInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Permissions = data
+		case "fieldFilters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldFilters"))
+			data, err := ec.unmarshalOFieldFilterInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FieldFilters = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputFieldFilterInput(ctx context.Context, obj any) (model.FieldFilterInput, error) {
+	var it model.FieldFilterInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"field", "includeList", "excludeList", "filterType"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		case "includeList":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeList"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncludeList = data
+		case "excludeList":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("excludeList"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExcludeList = data
+		case "filterType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filterType"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FilterType = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPermissionInput(ctx context.Context, obj any) (model.PermissionInput, error) {
+	var it model.PermissionInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"table", "action"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "table":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("table"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Table = data
+		case "action":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("action"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Action = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateGroupACLInput(ctx context.Context, obj any) (model.UpdateGroupACLInput, error) {
+	var it model.UpdateGroupACLInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"groupName", "permissions", "fieldFilters"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "groupName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GroupName = data
+		case "permissions":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("permissions"))
+			data, err := ec.unmarshalNPermissionInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Permissions = data
+		case "fieldFilters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldFilters"))
+			data, err := ec.unmarshalOFieldFilterInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FieldFilters = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateUserACLInput(ctx context.Context, obj any) (model.UpdateUserACLInput, error) {
+	var it model.UpdateUserACLInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"email", "groups", "permissions", "fieldFilters"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "groups":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groups"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Groups = data
+		case "permissions":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("permissions"))
+			data, err := ec.unmarshalOPermissionInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Permissions = data
+		case "fieldFilters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldFilters"))
+			data, err := ec.unmarshalOFieldFilterInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FieldFilters = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2570,6 +4204,165 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var aCLMutationResultImplementors = []string{"ACLMutationResult"}
+
+func (ec *executionContext) _ACLMutationResult(ctx context.Context, sel ast.SelectionSet, obj *model.ACLMutationResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aCLMutationResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ACLMutationResult")
+		case "success":
+			out.Values[i] = ec._ACLMutationResult_success(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._ACLMutationResult_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "record":
+			out.Values[i] = ec._ACLMutationResult_record(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var aCLRecordImplementors = []string{"ACLRecord"}
+
+func (ec *executionContext) _ACLRecord(ctx context.Context, sel ast.SelectionSet, obj *model.ACLRecord) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aCLRecordImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ACLRecord")
+		case "principalID":
+			out.Values[i] = ec._ACLRecord_principalID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "groups":
+			out.Values[i] = ec._ACLRecord_groups(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "permissions":
+			out.Values[i] = ec._ACLRecord_permissions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fieldFilters":
+			out.Values[i] = ec._ACLRecord_fieldFilters(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._ACLRecord_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var fieldFilterImplementors = []string{"FieldFilter"}
+
+func (ec *executionContext) _FieldFilter(ctx context.Context, sel ast.SelectionSet, obj *model.FieldFilter) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fieldFilterImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FieldFilter")
+		case "field":
+			out.Values[i] = ec._FieldFilter_field(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "includeList":
+			out.Values[i] = ec._FieldFilter_includeList(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "excludeList":
+			out.Values[i] = ec._FieldFilter_excludeList(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "filterType":
+			out.Values[i] = ec._FieldFilter_filterType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var loanCashFlowImplementors = []string{"LoanCashFlow"}
 
@@ -2582,17 +4375,31 @@ func (ec *executionContext) _LoanCashFlow(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LoanCashFlow")
-		case "loanCode":
-			out.Values[i] = ec._LoanCashFlow_loanCode(ctx, field, obj)
+		case "loancode":
+			out.Values[i] = ec._LoanCashFlow_loancode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "maxHmy":
 			out.Values[i] = ec._LoanCashFlow_maxHmy(ctx, field, obj)
+		case "accrualenddate":
+			out.Values[i] = ec._LoanCashFlow_accrualenddate(ctx, field, obj)
+		case "accrualstartdate":
+			out.Values[i] = ec._LoanCashFlow_accrualstartdate(ctx, field, obj)
 		case "balance":
 			out.Values[i] = ec._LoanCashFlow_balance(ctx, field, obj)
+		case "capitalizedFee":
+			out.Values[i] = ec._LoanCashFlow_capitalizedFee(ctx, field, obj)
+		case "capitalizedInterest":
+			out.Values[i] = ec._LoanCashFlow_capitalizedInterest(ctx, field, obj)
+		case "capitalizedLoanAdministrationFee":
+			out.Values[i] = ec._LoanCashFlow_capitalizedLoanAdministrationFee(ctx, field, obj)
+		case "capitalizedOtherFees":
+			out.Values[i] = ec._LoanCashFlow_capitalizedOtherFees(ctx, field, obj)
 		case "commitment":
 			out.Values[i] = ec._LoanCashFlow_commitment(ctx, field, obj)
+		case "drawActualPrincipal":
+			out.Values[i] = ec._LoanCashFlow_drawActualPrincipal(ctx, field, obj)
 		case "ebalance":
 			out.Values[i] = ec._LoanCashFlow_ebalance(ctx, field, obj)
 		case "glPerioddate":
@@ -2607,8 +4414,8 @@ func (ec *executionContext) _LoanCashFlow(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._LoanCashFlow_leverageInterest(ctx, field, obj)
 		case "loandesc":
 			out.Values[i] = ec._LoanCashFlow_loandesc(ctx, field, obj)
-		case "periodend":
-			out.Values[i] = ec._LoanCashFlow_periodend(ctx, field, obj)
+		case "paymentnumber":
+			out.Values[i] = ec._LoanCashFlow_paymentnumber(ctx, field, obj)
 		case "postdate":
 			out.Values[i] = ec._LoanCashFlow_postdate(ctx, field, obj)
 		case "propertycode":
@@ -2712,6 +4519,134 @@ func (ec *executionContext) _LoanCashFlows(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
+			Object: field.Name,
+			Field:  field,
+		})
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "addUserACL":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addUserACL(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateUserACL":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateUserACL(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "addGroupACL":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addGroupACL(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateGroupACL":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateGroupACL(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteUserACL":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteUserACL(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteGroupACL":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteGroupACL(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var permissionImplementors = []string{"Permission"}
+
+func (ec *executionContext) _Permission(ctx context.Context, sel ast.SelectionSet, obj *model.Permission) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, permissionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Permission")
+		case "table":
+			out.Values[i] = ec._Permission_table(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "action":
+			out.Values[i] = ec._Permission_action(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2753,6 +4688,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "ssotReportsAdministratorConfiguration":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ssotReportsAdministratorConfiguration(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -2761,6 +4718,45 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var ssotReportsAdministratorConfigurationImplementors = []string{"SsotReportsAdministratorConfiguration"}
+
+func (ec *executionContext) _SsotReportsAdministratorConfiguration(ctx context.Context, sel ast.SelectionSet, obj *model.SsotReportsAdministratorConfiguration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ssotReportsAdministratorConfigurationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SsotReportsAdministratorConfiguration")
+		case "listACLRecords":
+			out.Values[i] = ec._SsotReportsAdministratorConfiguration_listACLRecords(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3119,23 +5115,21 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
-	res, err := graphql.UnmarshalBoolean(v)
-	return res, graphql.ErrorOnPath(ctx, err)
+func (ec *executionContext) marshalNACLMutationResult2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLMutationResult(ctx context.Context, sel ast.SelectionSet, v model.ACLMutationResult) graphql.Marshaler {
+	return ec._ACLMutationResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalBoolean(v)
-	if res == graphql.Null {
+func (ec *executionContext) marshalNACLMutationResult2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLMutationResult(ctx context.Context, sel ast.SelectionSet, v *model.ACLMutationResult) graphql.Marshaler {
+	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
+		return graphql.Null
 	}
-	return res
+	return ec._ACLMutationResult(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LoanCashFlow) graphql.Marshaler {
+func (ec *executionContext) marshalNACLRecord2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLRecordᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ACLRecord) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3159,7 +5153,7 @@ func (ec *executionContext) marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLoanCashFlow2ᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlow(ctx, sel, v[i])
+			ret[i] = ec.marshalNACLRecord2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLRecord(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3179,7 +5173,146 @@ func (ec *executionContext) marshalNLoanCashFlow2ᚕᚖssotᚋapiᚋgraphqlᚋgr
 	return ret
 }
 
-func (ec *executionContext) marshalNLoanCashFlow2ᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlow(ctx context.Context, sel ast.SelectionSet, v *model.LoanCashFlow) graphql.Marshaler {
+func (ec *executionContext) marshalNACLRecord2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLRecord(ctx context.Context, sel ast.SelectionSet, v *model.ACLRecord) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ACLRecord(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAddGroupACLInput2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐAddGroupACLInput(ctx context.Context, v any) (model.AddGroupACLInput, error) {
+	res, err := ec.unmarshalInputAddGroupACLInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNAddUserACLInput2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐAddUserACLInput(ctx context.Context, v any) (model.AddUserACLInput, error) {
+	res, err := ec.unmarshalInputAddUserACLInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
+	res, err := graphql.UnmarshalBoolean(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalBoolean(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNFieldFilter2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FieldFilter) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFieldFilter2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilter(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNFieldFilter2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilter(ctx context.Context, sel ast.SelectionSet, v *model.FieldFilter) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FieldFilter(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFieldFilterInput2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterInput(ctx context.Context, v any) (*model.FieldFilterInput, error) {
+	res, err := ec.unmarshalInputFieldFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNLoanCashFlow2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LoanCashFlow) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLoanCashFlow2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlow(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLoanCashFlow2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlow(ctx context.Context, sel ast.SelectionSet, v *model.LoanCashFlow) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -3189,11 +5322,11 @@ func (ec *executionContext) marshalNLoanCashFlow2ᚖssotᚋapiᚋgraphqlᚋgraph
 	return ec._LoanCashFlow(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLoanCashFlows2ssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows(ctx context.Context, sel ast.SelectionSet, v model.LoanCashFlows) graphql.Marshaler {
+func (ec *executionContext) marshalNLoanCashFlows2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows(ctx context.Context, sel ast.SelectionSet, v model.LoanCashFlows) graphql.Marshaler {
 	return ec._LoanCashFlows(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLoanCashFlows2ᚖssotᚋapiᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows(ctx context.Context, sel ast.SelectionSet, v *model.LoanCashFlows) graphql.Marshaler {
+func (ec *executionContext) marshalNLoanCashFlows2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlows(ctx context.Context, sel ast.SelectionSet, v *model.LoanCashFlows) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -3201,6 +5334,94 @@ func (ec *executionContext) marshalNLoanCashFlows2ᚖssotᚋapiᚋgraphqlᚋgrap
 		return graphql.Null
 	}
 	return ec._LoanCashFlows(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPermission2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Permission) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPermission2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermission(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPermission2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermission(ctx context.Context, sel ast.SelectionSet, v *model.Permission) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Permission(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPermissionInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInputᚄ(ctx context.Context, v any) ([]*model.PermissionInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.PermissionInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPermissionInput2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNPermissionInput2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInput(ctx context.Context, v any) (*model.PermissionInput, error) {
+	res, err := ec.unmarshalInputPermissionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSsotReportsAdministratorConfiguration2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐSsotReportsAdministratorConfiguration(ctx context.Context, sel ast.SelectionSet, v model.SsotReportsAdministratorConfiguration) graphql.Marshaler {
+	return ec._SsotReportsAdministratorConfiguration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSsotReportsAdministratorConfiguration2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐSsotReportsAdministratorConfiguration(ctx context.Context, sel ast.SelectionSet, v *model.SsotReportsAdministratorConfiguration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SsotReportsAdministratorConfiguration(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
@@ -3217,6 +5438,46 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNUpdateGroupACLInput2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐUpdateGroupACLInput(ctx context.Context, v any) (model.UpdateGroupACLInput, error) {
+	res, err := ec.unmarshalInputUpdateGroupACLInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateUserACLInput2ssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐUpdateUserACLInput(ctx context.Context, v any) (model.UpdateUserACLInput, error) {
+	res, err := ec.unmarshalInputUpdateUserACLInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -3472,6 +5733,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) marshalOACLRecord2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐACLRecord(ctx context.Context, sel ast.SelectionSet, v *model.ACLRecord) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ACLRecord(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3502,6 +5770,24 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) unmarshalOFieldFilterInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterInputᚄ(ctx context.Context, v any) ([]*model.FieldFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.FieldFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFieldFilterInput2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐFieldFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
 	if v == nil {
 		return nil, nil
@@ -3517,6 +5803,60 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	_ = sel
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalOPermissionInput2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInputᚄ(ctx context.Context, v any) ([]*model.PermissionInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.PermissionInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPermissionInput2ᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐPermissionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

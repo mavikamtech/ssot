@@ -30,6 +30,12 @@ functions:
     environment:
       ENDPOINT: https://dummyjson.com/products
       DYNAMO_TABLE_NAME: sample-data
-
+    vpc:
+      securityGroupIds:
+        - sg-0ffeef1c57a795a0d
+      subnetIds:
+        - subnet-07a88fae33859673b
+        - subnet-0c869995323aac9f6
+        
 resources:
   - ${file(./${self:provider.stage}-resources.yml), null}
