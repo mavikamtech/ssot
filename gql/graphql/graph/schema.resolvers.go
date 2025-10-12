@@ -40,6 +40,36 @@ func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanC
 	return r.ServiceManager.LoanCashFlowService.GetByLoanCodeWithFieldFilters(ctx, loanCode, columnPermissions, fieldFilters)
 }
 
+// AddUserACL is the resolver for the addUserACL field.
+func (r *mutationResolver) AddUserACL(ctx context.Context, input model.AddUserACLInput) (*model.ACLMutationResult, error) {
+	return r.ACLMutations.AddUserACL(ctx, input)
+}
+
+// UpdateUserACL is the resolver for the updateUserACL field.
+func (r *mutationResolver) UpdateUserACL(ctx context.Context, input model.UpdateUserACLInput) (*model.ACLMutationResult, error) {
+	return r.ACLMutations.UpdateUserACL(ctx, input)
+}
+
+// AddGroupACL is the resolver for the addGroupACL field.
+func (r *mutationResolver) AddGroupACL(ctx context.Context, input model.AddGroupACLInput) (*model.ACLMutationResult, error) {
+	return r.ACLMutations.AddGroupACL(ctx, input)
+}
+
+// UpdateGroupACL is the resolver for the updateGroupACL field.
+func (r *mutationResolver) UpdateGroupACL(ctx context.Context, input model.UpdateGroupACLInput) (*model.ACLMutationResult, error) {
+	return r.ACLMutations.UpdateGroupACL(ctx, input)
+}
+
+// DeleteUserACL is the resolver for the deleteUserACL field.
+func (r *mutationResolver) DeleteUserACL(ctx context.Context, email string) (*model.ACLMutationResult, error) {
+	return r.ACLMutations.DeleteUserACL(ctx, email)
+}
+
+// DeleteGroupACL is the resolver for the deleteGroupACL field.
+func (r *mutationResolver) DeleteGroupACL(ctx context.Context, groupName string) (*model.ACLMutationResult, error) {
+	return r.ACLMutations.DeleteGroupACL(ctx, groupName)
+}
+
 // LoanCashFlow is the resolver for the loanCashFlow field.
 func (r *queryResolver) LoanCashFlow(ctx context.Context) (*model.LoanCashFlows, error) {
 	// Check authentication
@@ -51,11 +81,20 @@ func (r *queryResolver) LoanCashFlow(ctx context.Context) (*model.LoanCashFlows,
 	return &model.LoanCashFlows{}, nil
 }
 
+// SsotReportsAdministratorConfiguration is the resolver for the ssotReportsAdministratorConfiguration field.
+func (r *queryResolver) SsotReportsAdministratorConfiguration(ctx context.Context) (*model.SsotReportsAdministratorConfiguration, error) {
+	return r.ACLQueries.SsotReportsAdministratorConfiguration(ctx)
+}
+
 // LoanCashFlows returns LoanCashFlowsResolver implementation.
 func (r *Resolver) LoanCashFlows() LoanCashFlowsResolver { return &loanCashFlowsResolver{r} }
+
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type loanCashFlowsResolver struct{ *Resolver }
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

@@ -3,6 +3,7 @@ package acl
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"ssot/gql/graphql/internal/auth/middleware"
@@ -287,4 +288,39 @@ func (m *ACLMiddleware) CheckFieldValueAccess(ctx context.Context, fieldName, fi
 	}
 
 	return filter.IsValueAllowed(fieldValue), nil
+}
+
+// HasAdminAccess checks if the current user has admin group membership
+func (m *ACLMiddleware) HasAdminAccess(ctx context.Context) (bool, error) {
+	user, err := middleware.GetUserFromContext(ctx)
+	if err != nil {
+		return false, fmt.Errorf("authentication required: %w", err)
+	}
+
+	acl, err := m.service.GetMergedACL(ctx, user.Email)
+	if err != nil {
+		return false, fmt.Errorf("failed to get user permissions: %w", err)
+	}
+
+	// Check if user is in admin group
+	if slices.Contains(acl.Groups, "group:admin") {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// RequireAdminAccess checks if the current user has admin access and returns an error if not
+func (m *ACLMiddleware) RequireAdminAccess(ctx context.Context) error {
+	hasAdmin, err := m.HasAdminAccess(ctx)
+	if err != nil {
+		return err
+	}
+
+	if !hasAdmin {
+		user, _ := middleware.GetUserFromContext(ctx)
+		return fmt.Errorf("admin access required: user %s does not have admin group membership", user.Email)
+	}
+
+	return nil
 }

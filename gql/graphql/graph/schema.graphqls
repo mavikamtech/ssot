@@ -32,4 +32,86 @@ type LoanCashFlows {
 
 type Query {
   loanCashFlow: LoanCashFlows!
+  ssotReportsAdministratorConfiguration: SsotReportsAdministratorConfiguration!
+}
+
+type Mutation {
+  addUserACL(input: AddUserACLInput!): ACLMutationResult!
+  updateUserACL(input: UpdateUserACLInput!): ACLMutationResult!
+  addGroupACL(input: AddGroupACLInput!): ACLMutationResult!
+  updateGroupACL(input: UpdateGroupACLInput!): ACLMutationResult!
+  deleteUserACL(email: String!): ACLMutationResult!
+  deleteGroupACL(groupName: String!): ACLMutationResult!
+}
+
+# SSOT Reports Administrator Configuration Types
+type SsotReportsAdministratorConfiguration {
+  listACLRecords: [ACLRecord!]!
+}
+
+# ACL Types
+type ACLRecord {
+  principalID: String!
+  groups: [String!]!
+  permissions: [Permission!]!
+  fieldFilters: [FieldFilter!]!
+  updatedAt: String!
+}
+
+type Permission {
+  table: String!
+  action: String!
+}
+
+type FieldFilter {
+  field: String!
+  includeList: [String!]!
+  excludeList: [String!]!
+  filterType: String!
+}
+
+# Input Types
+input AddUserACLInput {
+  email: String!
+  groups: [String!]!
+  permissions: [PermissionInput!]!
+  fieldFilters: [FieldFilterInput!]
+}
+
+input UpdateUserACLInput {
+  email: String!
+  groups: [String!]
+  permissions: [PermissionInput!]
+  fieldFilters: [FieldFilterInput!]
+}
+
+input AddGroupACLInput {
+  groupName: String!
+  permissions: [PermissionInput!]!
+  fieldFilters: [FieldFilterInput!]
+}
+
+input UpdateGroupACLInput {
+  groupName: String!
+  permissions: [PermissionInput!]!
+  fieldFilters: [FieldFilterInput!]
+}
+
+input PermissionInput {
+  table: String!
+  action: String!
+}
+
+input FieldFilterInput {
+  field: String!
+  includeList: [String!]!
+  excludeList: [String!]!
+  filterType: String!
+}
+
+# Result Types
+type ACLMutationResult {
+  success: Boolean!
+  message: String!
+  record: ACLRecord
 }

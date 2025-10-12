@@ -39,9 +39,7 @@ func main() {
 	serviceConfig := services.LoadServiceConfigFromEnv(dynamoClient)
 	serviceManager := services.NewServiceManager(serviceConfig)
 
-	resolver := &graph.Resolver{
-		ServiceManager: serviceManager,
-	}
+	resolver := graph.NewResolver(serviceManager)
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
