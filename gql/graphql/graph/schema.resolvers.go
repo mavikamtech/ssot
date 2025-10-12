@@ -7,6 +7,7 @@ package graph
 import (
 	"context"
 	"ssot/gql/graphql/graph/model"
+	"ssot/gql/graphql/graph/services"
 	"ssot/gql/graphql/internal/auth/middleware"
 )
 
@@ -18,7 +19,16 @@ func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanC
 		return nil, err
 	}
 
-	return r.ServiceManager.LoanCashFlowService.GetByLoanCode(ctx, loanCode)
+	// Get column-level permissions using flexible ACL check (either ACL or scope check passes)
+	// This determines which columns the user can access
+	columnPermissions, err := r.ServiceManager.ACLMiddleware.GetColumnPermissionsFlexible(
+		ctx, "LoanCashFlow", "ssot:gql:loancashflow:read", services.AllLoanCashFlowColumns)
+	if err != nil {
+		return nil, err
+	}
+
+	// Pass column permissions to the service for filtering
+	return r.ServiceManager.LoanCashFlowService.GetByLoanCode(ctx, loanCode, columnPermissions)
 }
 
 // LoanCashFlow is the resolver for the loanCashFlow field.
