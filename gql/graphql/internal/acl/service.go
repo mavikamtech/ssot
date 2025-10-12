@@ -36,10 +36,11 @@ func (s *ACLService) GetMergedACL(ctx context.Context, email string) (*MergedACL
 	if entry, exists := s.cache[email]; exists && !entry.IsExpired() {
 		s.mutex.RUnlock()
 		return &MergedACL{
-			UserEmail:   email,
-			Permissions: entry.ACL.Permissions,
-			Groups:      entry.ACL.Groups,
-			CachedAt:    time.Now().Add(-s.ttl).Add(time.Until(entry.ExpiresAt)),
+			UserEmail:    email,
+			Permissions:  entry.ACL.Permissions,
+			FieldFilters: entry.ACL.FieldFilters,
+			Groups:       entry.ACL.Groups,
+			CachedAt:     time.Now().Add(-s.ttl).Add(time.Until(entry.ExpiresAt)),
 		}, nil
 	}
 	s.mutex.RUnlock()
@@ -53,10 +54,11 @@ func (s *ACLService) GetMergedACL(ctx context.Context, email string) (*MergedACL
 	// Update cache
 	s.mutex.Lock()
 	s.cache[email] = NewCacheEntry(&ACLRecord{
-		PrincipalID: email,
-		Groups:      mergedACL.Groups,
-		Permissions: mergedACL.Permissions,
-		UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+		PrincipalID:  email,
+		Groups:       mergedACL.Groups,
+		Permissions:  mergedACL.Permissions,
+		FieldFilters: mergedACL.FieldFilters,
+		UpdatedAt:    time.Now().UTC().Format(time.RFC3339),
 	}, s.ttl)
 	s.mutex.Unlock()
 

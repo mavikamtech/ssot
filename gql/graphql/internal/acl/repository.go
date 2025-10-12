@@ -198,14 +198,54 @@ func (r *DynamoRepository) marshalACLRecord(record *ACLRecord) map[string]types.
 		item["Permissions"] = &types.AttributeValueMemberM{Value: map[string]types.AttributeValue{}}
 	}
 
+	// Marshal FieldFilters (map of string to FieldFilter)
+	if len(record.FieldFilters) > 0 {
+		fieldFilterItems := make(map[string]types.AttributeValue)
+		for key, filter := range record.FieldFilters {
+			// Create a map for the FieldFilter struct
+			filterMap := map[string]types.AttributeValue{
+				"Field":      &types.AttributeValueMemberS{Value: filter.Field},
+				"FilterType": &types.AttributeValueMemberS{Value: filter.FilterType},
+			}
+
+			// Marshal IncludeList
+			if len(filter.IncludeList) > 0 {
+				includeItems := make([]types.AttributeValue, 0, len(filter.IncludeList))
+				for _, include := range filter.IncludeList {
+					includeItems = append(includeItems, &types.AttributeValueMemberS{Value: include})
+				}
+				filterMap["IncludeList"] = &types.AttributeValueMemberL{Value: includeItems}
+			} else {
+				filterMap["IncludeList"] = &types.AttributeValueMemberL{Value: []types.AttributeValue{}}
+			}
+
+			// Marshal ExcludeList
+			if len(filter.ExcludeList) > 0 {
+				excludeItems := make([]types.AttributeValue, 0, len(filter.ExcludeList))
+				for _, exclude := range filter.ExcludeList {
+					excludeItems = append(excludeItems, &types.AttributeValueMemberS{Value: exclude})
+				}
+				filterMap["ExcludeList"] = &types.AttributeValueMemberL{Value: excludeItems}
+			} else {
+				filterMap["ExcludeList"] = &types.AttributeValueMemberL{Value: []types.AttributeValue{}}
+			}
+
+			fieldFilterItems[key] = &types.AttributeValueMemberM{Value: filterMap}
+		}
+		item["FieldFilters"] = &types.AttributeValueMemberM{Value: fieldFilterItems}
+	} else {
+		item["FieldFilters"] = &types.AttributeValueMemberM{Value: map[string]types.AttributeValue{}}
+	}
+
 	return item
 }
 
 // unmarshalACLRecord converts DynamoDB item to ACLRecord
 func (r *DynamoRepository) unmarshalACLRecord(item map[string]types.AttributeValue) *ACLRecord {
 	record := &ACLRecord{
-		Groups:      []string{},
-		Permissions: make(map[string]string),
+		Groups:       []string{},
+		Permissions:  make(map[string]string),
+		FieldFilters: make(map[string]FieldFilter),
 	}
 
 	// Unmarshal PrincipalID
@@ -239,6 +279,55 @@ func (r *DynamoRepository) unmarshalACLRecord(item map[string]types.AttributeVal
 			for key, permVal := range m.Value {
 				if s, ok := permVal.(*types.AttributeValueMemberS); ok {
 					record.Permissions[key] = s.Value
+				}
+			}
+		}
+	}
+
+	// Unmarshal FieldFilters
+	if val, ok := item["FieldFilters"]; ok {
+		if m, ok := val.(*types.AttributeValueMemberM); ok {
+			for key, filterVal := range m.Value {
+				if filterMap, ok := filterVal.(*types.AttributeValueMemberM); ok {
+					filter := FieldFilter{}
+
+					// Unmarshal Field
+					if fieldVal, exists := filterMap.Value["Field"]; exists {
+						if s, ok := fieldVal.(*types.AttributeValueMemberS); ok {
+							filter.Field = s.Value
+						}
+					}
+
+					// Unmarshal FilterType
+					if filterTypeVal, exists := filterMap.Value["FilterType"]; exists {
+						if s, ok := filterTypeVal.(*types.AttributeValueMemberS); ok {
+							filter.FilterType = s.Value
+						}
+					}
+
+					// Unmarshal IncludeList
+					if includeListVal, exists := filterMap.Value["IncludeList"]; exists {
+						if l, ok := includeListVal.(*types.AttributeValueMemberL); ok {
+							for _, includeVal := range l.Value {
+								if s, ok := includeVal.(*types.AttributeValueMemberS); ok {
+									filter.IncludeList = append(filter.IncludeList, s.Value)
+								}
+							}
+						}
+					}
+
+					// Unmarshal ExcludeList
+					if excludeListVal, exists := filterMap.Value["ExcludeList"]; exists {
+						if l, ok := excludeListVal.(*types.AttributeValueMemberL); ok {
+							for _, excludeVal := range l.Value {
+								if s, ok := excludeVal.(*types.AttributeValueMemberS); ok {
+									filter.ExcludeList = append(filter.ExcludeList, s.Value)
+								}
+							}
+						}
+					}
+
+					record.FieldFilters[key] = filter
 				}
 			}
 		}

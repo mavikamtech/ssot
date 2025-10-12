@@ -26,12 +26,6 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		accessToken := r.Header.Get("X-Amzn-Oidc-Accesstoken")
-		if accessToken == "" {
-			http.Error(w, "No access token", http.StatusUnauthorized)
-			return
-		}
-
 		// Check for x-amzn-oidc-data header first
 		if user, err := providers.ValidateOIDCAuth(r); err == nil {
 			// Convert providers.User to auth.User
