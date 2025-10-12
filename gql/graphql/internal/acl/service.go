@@ -69,6 +69,7 @@ func (s *ACLService) GetMergedACL(ctx context.Context, email string) (*MergedACL
 func (s *ACLService) fetchAndMergeACL(ctx context.Context, email string) (*MergedACL, error) {
 	// Step 1: Get user record
 	userRecord, err := s.repo.GetUserRecord(ctx, email)
+	fmt.Println("Fetched user record:", userRecord, "email:", email, "err:", err)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user record: %w", err)
 	}
@@ -78,7 +79,7 @@ func (s *ACLService) fetchAndMergeACL(ctx context.Context, email string) (*Merge
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group records: %w", err)
 	}
-
+	fmt.Println("Fetched group records:", groupRecords, "groups:", userRecord.Groups)
 	// Step 3: Merge permissions (user permissions take precedence)
 	mergedPermissions := make(map[string]string)
 
