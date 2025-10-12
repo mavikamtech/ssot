@@ -151,14 +151,6 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 		}
 	}
 
-	// Skip composite sort key - not a user-facing column
-	if compositeSortAttr, ok := item["postdate#maxHmy"]; ok {
-		if s, ok := compositeSortAttr.(*types.AttributeValueMemberS); ok {
-			// This composite key is used for DynamoDB ordering
-			_ = s.Value
-		}
-	}
-
 	if columnPermissions.IsAllowed("balance") {
 		if balanceAttr, ok := item["balance"]; ok {
 			if n, ok := balanceAttr.(*types.AttributeValueMemberN); ok {
