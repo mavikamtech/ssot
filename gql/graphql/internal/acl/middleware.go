@@ -176,22 +176,19 @@ func (m *ACLMiddleware) GetColumnPermissionsFlexible(ctx context.Context, table,
 	// Try ACL first
 	acl, err := m.service.GetMergedACL(ctx, user.Email)
 	if err == nil {
-		// ACL is available, use it to determine column permissions
-		columnAccess := make(map[string]string)
-
+		// ACL is available, check if user has access
 		if acl.CanAccess(table, "read") {
 			// User has table-level read access, allow all columns
+			columnAccess := make(map[string]string)
 			for _, column := range allColumns {
 				columnAccess[column] = "allowed"
 			}
+			return NewColumnPermissions(table, columnAccess, false), nil // ACL used, not scope fallback
 		} else {
-			// User doesn't have table access, block all columns
-			for _, column := range allColumns {
-				columnAccess[column] = "blocked"
-			}
+			// User doesn't have table access - this includes blocking permissions
+			// Return error instead of blocked columns to completely deny access
+			return nil, fmt.Errorf("access denied: user %s does not have read permission for %s", user.Email, table)
 		}
-
-		return NewColumnPermissions(table, columnAccess, false), nil // ACL used, not scope fallback
 	}
 
 	// ACL not available, check scope fallback
@@ -204,12 +201,8 @@ func (m *ACLMiddleware) GetColumnPermissionsFlexible(ctx context.Context, table,
 		return NewColumnPermissions(table, columnAccess, true), nil // Scope fallback used
 	}
 
-	// Both ACL and scope failed, block all columns
-	columnAccess := make(map[string]string)
-	for _, column := range allColumns {
-		columnAccess[column] = "blocked"
-	}
-	return NewColumnPermissions(table, columnAccess, false), fmt.Errorf("access denied: user %s does not have read permission for %s (checked both ACL and scope %s)",
+	// Both ACL and scope failed, deny access completely
+	return nil, fmt.Errorf("access denied: user %s does not have read permission for %s (checked both ACL and scope %s)",
 		user.Email, table, requiredScope)
 }
 

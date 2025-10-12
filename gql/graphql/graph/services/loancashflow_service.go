@@ -74,7 +74,6 @@ func (s *LoanCashFlowService) GetByLoanCodeWithFieldFilters(ctx context.Context,
 		return nil, err
 	}
 
-	fmt.Println("Applying field filters:", fieldFilters)
 	// Apply field filters
 	if len(fieldFilters) == 0 {
 		return loanCashFlows, nil
