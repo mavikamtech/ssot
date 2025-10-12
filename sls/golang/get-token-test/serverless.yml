@@ -1,0 +1,43 @@
+service: get-token-test
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  runtime: provided.al2
+  architecture: arm64
+  deploymentBucket:
+    name: ssot-lambda-build-deploy
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+            - secretsmanager:PutSecretValue
+          Resource: 
+            - arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:ssot-auth-client-staging-test*
+            - arn:aws:secretsmanager:${self:provider.region}:${aws:accountId}:secret:ssot-auth-client-prod-test-2*
+            
+        - Effect: Allow
+          Action:
+            - kms:Decrypt
+            - kms:DescribeKey
+            - kms:Encrypt
+            - kms:GenerateDataKey
+          Resource: arn:aws:kms:us-east-1:167067248318:key/*
+          Condition:
+            StringEquals:
+              kms:ViaService: secretsmanager.us-east-1.amazonaws.com
+
+package:
+    artifact: ../bin/get-token-test.zip
+
+functions:
+  get-token-test:
+    name: get-token-test-${self:provider.stage}
+    handler: bootstrap
+    url: true
+    environment:
+      SECRET_NAMES: "ssot-auth-client-staging-test,ssot-auth-client-prod-test-2"
