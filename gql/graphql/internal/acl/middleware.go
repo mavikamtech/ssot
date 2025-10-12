@@ -101,7 +101,7 @@ func (m *ACLMiddleware) HasAnyPermission(ctx context.Context, table string) (boo
 
 	// Check for any permission pattern matching the table
 	for key := range acl.Permissions {
-		if len(key) > len(table) && key[:len(table)] == table && key[len(table)] == '#' {
+		if len(key) > len(table)+1 && key[:len(table)] == table && key[len(table)] == '#' {
 			return true, nil
 		}
 	}
