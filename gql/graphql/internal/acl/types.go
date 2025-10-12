@@ -36,7 +36,7 @@ const (
 // Permission represents a specific permission level
 type Permission struct {
 	Table   string           // Table name (e.g., "LoanCache")
-	Columns []string         // Column names (e.g., ["Balance", "InterestRate"] or ["*"] for all)
+	Columns []string         // Column names (for future use, now table-level only)
 	Action  PermissionAction // Action allowed
 }
 
@@ -109,16 +109,11 @@ func (cp *ColumnPermissions) IsBlocked(column string) bool {
 	return cp.ColumnAccess[column] == "blocked"
 }
 
-// CanAccess checks if the merged ACL allows a specific action
-func (m *MergedACL) CanAccess(table, column, action string) bool {
+// CanAccess checks if the merged ACL allows a specific action at table level
+func (m *MergedACL) CanAccess(table, action string) bool {
 	// Check for explicit blocking first (highest priority)
-	exactKey := table + "#" + column
-	if perm, exists := m.Permissions[exactKey]; exists && perm == "blocking" {
-		return false
-	}
-
-	wildcardKey := table + "#*"
-	if perm, exists := m.Permissions[wildcardKey]; exists && perm == "blocking" {
+	tableKey := table + "#*"
+	if perm, exists := m.Permissions[tableKey]; exists && perm == "blocking" {
 		return false
 	}
 
@@ -127,13 +122,8 @@ func (m *MergedACL) CanAccess(table, column, action string) bool {
 	}
 
 	// Now check for positive permissions
-	// Try exact match first: "LoanCache#Balance"
-	if perm, exists := m.Permissions[exactKey]; exists {
-		return hasPermission(perm, action)
-	}
-
-	// Try wildcard match: "LoanCache#*"
-	if perm, exists := m.Permissions[wildcardKey]; exists {
+	// Try table-level permission: "TableName#*"
+	if perm, exists := m.Permissions[tableKey]; exists {
 		return hasPermission(perm, action)
 	}
 

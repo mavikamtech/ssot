@@ -35,9 +35,9 @@ func (m *ACLMiddleware) CheckPermission(ctx context.Context, table, column, acti
 	}
 
 	// Check if user has required permission
-	if !acl.CanAccess(table, column, action) {
-		return fmt.Errorf("access denied: user %s does not have %s permission for %s.%s",
-			user.Email, action, table, column)
+	if !acl.CanAccess(table, action) {
+		return fmt.Errorf("access denied: user %s does not have %s permission for %s",
+			user.Email, action, table)
 	}
 
 	return nil
@@ -125,20 +125,13 @@ func (m *ACLMiddleware) FilterColumns(ctx context.Context, table string, columns
 		return nil, err
 	}
 
-	// If user has wildcard or global access, return all columns
-	if acl.CanAccess(table, "*", "read") {
-		return columns, nil
+	// Check table-level read access
+	if acl.CanAccess(table, "read") {
+		return columns, nil // User has read access to the table, return all columns
 	}
 
-	// Filter columns based on specific permissions
-	var allowedColumns []string
-	for _, column := range columns {
-		if acl.CanAccess(table, column, "read") {
-			allowedColumns = append(allowedColumns, column)
-		}
-	}
-
-	return allowedColumns, nil
+	// No table access, return empty slice
+	return []string{}, nil
 }
 
 // CheckPermissionFlexible validates permission using either ACL or scope check
@@ -150,9 +143,9 @@ func (m *ACLMiddleware) CheckPermissionFlexible(ctx context.Context, table, colu
 		return fmt.Errorf("authentication required: %w", err)
 	}
 
-	// First try ACL check
+	// First try ACL check (table-level only)
 	acl, err := m.service.GetMergedACL(ctx, user.Email)
-	if err == nil && acl.CanAccess(table, column, action) {
+	if err == nil && acl.CanAccess(table, action) {
 		return nil // ACL check passed
 	}
 
@@ -162,8 +155,8 @@ func (m *ACLMiddleware) CheckPermissionFlexible(ctx context.Context, table, colu
 	}
 
 	// Both checks failed
-	return fmt.Errorf("access denied: user %s does not have %s permission for %s.%s (checked both ACL and scope %s)",
-		user.Email, action, table, column, requiredScope)
+	return fmt.Errorf("access denied: user %s does not have %s permission for %s (checked both ACL and scope %s)",
+		user.Email, action, table, requiredScope)
 }
 
 // CheckReadPermissionFlexible checks read permission with fallback to scope
@@ -185,10 +178,14 @@ func (m *ACLMiddleware) GetColumnPermissionsFlexible(ctx context.Context, table,
 		// ACL is available, use it to determine column permissions
 		columnAccess := make(map[string]string)
 
-		for _, column := range allColumns {
-			if acl.CanAccess(table, column, "read") {
+		if acl.CanAccess(table, "read") {
+			// User has table-level read access, allow all columns
+			for _, column := range allColumns {
 				columnAccess[column] = "allowed"
-			} else {
+			}
+		} else {
+			// User doesn't have table access, block all columns
+			for _, column := range allColumns {
 				columnAccess[column] = "blocked"
 			}
 		}
@@ -236,7 +233,7 @@ func (m *ACLMiddleware) TryACLFirst(ctx context.Context, table, column, action s
 	}
 
 	// ACL is available, return the result
-	hasPermission := acl.CanAccess(table, column, action)
+	hasPermission := acl.CanAccess(table, action)
 	return hasPermission, true, nil
 }
 
