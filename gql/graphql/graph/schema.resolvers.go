@@ -6,7 +6,7 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"ssot/gql/graphql/graph/model"
 	"ssot/gql/graphql/graph/services"
 	"ssot/gql/graphql/internal/auth/middleware"
@@ -32,7 +32,7 @@ func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanC
 	fieldFilters, err := r.ServiceManager.ACLMiddleware.GetFieldFilters(ctx)
 	if err != nil {
 		// If field filters fail, continue with column-only filtering
-		fmt.Printf("Warning: failed to get field filters: %v\n", err)
+		log.Printf("Warning: failed to get field filters: %v\n", err)
 		return r.ServiceManager.LoanCashFlowService.GetByLoanCode(ctx, loanCode, columnPermissions)
 	}
 
