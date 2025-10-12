@@ -9,6 +9,24 @@ import (
 	"strings"
 )
 
+// validateGroupName validates that a group name starts with "group:"
+func validateGroupName(groupName string) error {
+	if !strings.HasPrefix(groupName, "group:") {
+		return fmt.Errorf("group name '%s' must begin with 'group:'", groupName)
+	}
+	return nil
+}
+
+// validateGroupNames validates that all group names start with "group:"
+func validateGroupNames(groups []string) error {
+	for _, group := range groups {
+		if err := validateGroupName(group); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ACLMutationResolver handles ACL-related mutations
 type ACLMutationResolver struct {
 	ServiceManager *services.ServiceManager
@@ -31,9 +49,17 @@ func (r *ACLMutationResolver) AddUserACL(ctx context.Context, input model.AddUse
 		}, nil
 	}
 
+	// Validate group names format
+	if err := validateGroupNames(input.Groups); err != nil {
+		return &model.ACLMutationResult{
+			Success: false,
+			Message: fmt.Sprintf("Invalid group name: %v", err),
+		}, nil
+	}
+
 	// Prevent adding admin group - only admin users can modify ACL, but cannot assign admin role
 	for _, group := range input.Groups {
-		if group == "admin" {
+		if group == "admin" || group == "group:admin" {
 			return &model.ACLMutationResult{
 				Success: false,
 				Message: "Cannot assign admin group through ACL configuration",
@@ -82,10 +108,20 @@ func (r *ACLMutationResolver) UpdateUserACL(ctx context.Context, input model.Upd
 		}, nil
 	}
 
+	// Validate group names format if groups are being updated
+	if len(input.Groups) > 0 {
+		if err := validateGroupNames(input.Groups); err != nil {
+			return &model.ACLMutationResult{
+				Success: false,
+				Message: fmt.Sprintf("Invalid group name: %v", err),
+			}, nil
+		}
+	}
+
 	// Prevent adding admin group
 	if len(input.Groups) > 0 {
 		for _, group := range input.Groups {
-			if group == "admin" {
+			if group == "admin" || group == "group:admin" {
 				return &model.ACLMutationResult{
 					Success: false,
 					Message: "Cannot assign admin group through ACL configuration",
@@ -144,8 +180,16 @@ func (r *ACLMutationResolver) AddGroupACL(ctx context.Context, input model.AddGr
 		}, nil
 	}
 
+	// Validate group name format
+	if err := validateGroupName(input.GroupName); err != nil {
+		return &model.ACLMutationResult{
+			Success: false,
+			Message: fmt.Sprintf("Invalid group name: %v", err),
+		}, nil
+	}
+
 	// Prevent creating admin group
-	if input.GroupName == "admin" {
+	if input.GroupName == "admin" || input.GroupName == "group:admin" {
 		return &model.ACLMutationResult{
 			Success: false,
 			Message: "Cannot modify admin group through ACL configuration",
@@ -182,8 +226,16 @@ func (r *ACLMutationResolver) UpdateGroupACL(ctx context.Context, input model.Up
 		}, nil
 	}
 
+	// Validate group name format
+	if err := validateGroupName(input.GroupName); err != nil {
+		return &model.ACLMutationResult{
+			Success: false,
+			Message: fmt.Sprintf("Invalid group name: %v", err),
+		}, nil
+	}
+
 	// Prevent modifying admin group
-	if input.GroupName == "admin" {
+	if input.GroupName == "admin" || input.GroupName == "group:admin" {
 		return &model.ACLMutationResult{
 			Success: false,
 			Message: "Cannot modify admin group through ACL configuration",
@@ -243,8 +295,16 @@ func (r *ACLMutationResolver) DeleteGroupACL(ctx context.Context, groupName stri
 		}, nil
 	}
 
+	// Validate group name format
+	if err := validateGroupName(groupName); err != nil {
+		return &model.ACLMutationResult{
+			Success: false,
+			Message: fmt.Sprintf("Invalid group name: %v", err),
+		}, nil
+	}
+
 	// Prevent deleting admin group
-	if groupName == "admin" {
+	if groupName == "admin" || groupName == "group:admin" {
 		return &model.ACLMutationResult{
 			Success: false,
 			Message: "Cannot delete admin group through ACL configuration",
