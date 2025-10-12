@@ -29,7 +29,8 @@ func main() {
 		port = defaultPort
 	}
 
-	awscfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+	ctx := context.TODO()
+	awscfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
 	if err != nil {
 		log.Fatalf("failed to load AWS config: %v", err)
 	}
@@ -37,7 +38,7 @@ func main() {
 	dynamoClient := dynamodb.NewFromConfig(awscfg)
 
 	serviceConfig := services.LoadServiceConfigFromEnv(dynamoClient)
-	serviceManager := services.NewServiceManager(serviceConfig)
+	serviceManager := services.NewServiceManager(ctx, serviceConfig)
 
 	resolver := graph.NewResolver(serviceManager)
 

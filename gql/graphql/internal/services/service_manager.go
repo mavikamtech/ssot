@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -29,10 +30,10 @@ type ServiceConfig struct {
 	// PropertyTableName          string
 }
 
-func NewServiceManager(config ServiceConfig) *ServiceManager {
+func NewServiceManager(ctx context.Context, config ServiceConfig) *ServiceManager {
 	// Initialize ACL components
 	aclRepo := acl.NewDynamoRepository(config.DynamoClient, config.ACLTableName)
-	aclService := acl.NewACLService(aclRepo, config.ACLCacheTTL)
+	aclService := acl.NewACLService(ctx, aclRepo, config.ACLCacheTTL)
 	aclMiddleware := acl.NewACLMiddleware(aclService)
 
 	return &ServiceManager{

@@ -16,7 +16,7 @@ type ACLService struct {
 }
 
 // NewACLService creates a new ACL service with the specified TTL
-func NewACLService(repo *DynamoRepository, ttl time.Duration) *ACLService {
+func NewACLService(ctx context.Context, repo *DynamoRepository, ttl time.Duration) *ACLService {
 	service := &ACLService{
 		repo:  repo,
 		cache: make(map[string]*CacheEntry),
@@ -24,7 +24,7 @@ func NewACLService(repo *DynamoRepository, ttl time.Duration) *ACLService {
 	}
 
 	// Start cache cleanup goroutine
-	go service.startCacheCleanup()
+	go service.startCacheCleanup(ctx)
 
 	return service
 }
@@ -128,12 +128,17 @@ func (s *ACLService) InvalidateAllCache() {
 }
 
 // startCacheCleanup runs a background goroutine to clean expired entries
-func (s *ACLService) startCacheCleanup() {
+func (s *ACLService) startCacheCleanup(ctx context.Context) {
 	ticker := time.NewTicker(5 * time.Minute) // Clean every 5 minutes
 	defer ticker.Stop()
 
-	for range ticker.C {
-		s.cleanExpiredEntries()
+	for {
+		select {
+		case <-ticker.C:
+			s.cleanExpiredEntries()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
