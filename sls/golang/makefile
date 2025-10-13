@@ -5,6 +5,18 @@ STAGE   ?= dev
 
 BIN_DIR := bin
 
+# =============== gql-token-refresher ===============
+build-gql-token-refresher: $(BIN_DIR)
+	@echo "==> Building gql-token-refresher..."
+	powershell -Command '$$env:GOOS="linux"; $$env:GOARCH="arm64"; $$env:CGO_ENABLED="0"; go build -tags lambda.norpc -o "$(BIN_DIR)/bootstrap" ./gql-token-refresher'
+	powershell -Command 'Compress-Archive -Path "$(BIN_DIR)/bootstrap" -DestinationPath "$(BIN_DIR)/gql-token-refresher.zip" -Force'
+
+deploy-gql-token-refresher: build-gql-token-refresher
+	cd gql-token-refresher && npx serverless deploy --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+
+remove-gql-token-refresher:
+	cd gql-token-refresher && npx serverless remove --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+
 # =============== hello-world ===============
 build-hello-world: $(BIN_DIR)
 	@echo "==> Building hello-world..."
