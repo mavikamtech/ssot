@@ -5,17 +5,17 @@ STAGE   ?= dev
 
 BIN_DIR := bin
 
-# =============== get-token-test ===============
-build-get-token-test: $(BIN_DIR)
-	@echo "==> Building get-token-test..."
-	powershell -Command '$$env:GOOS="linux"; $$env:GOARCH="arm64"; $$env:CGO_ENABLED="0"; go build -tags lambda.norpc -o "$(BIN_DIR)/bootstrap" ./get-token-test'
-	powershell -Command 'Compress-Archive -Path "$(BIN_DIR)/bootstrap" -DestinationPath "$(BIN_DIR)/get-token-test.zip" -Force'
+# =============== gql-token-refresher ===============
+build-gql-token-refresher: $(BIN_DIR)
+	@echo "==> Building gql-token-refresher..."
+	powershell -Command '$$env:GOOS="linux"; $$env:GOARCH="arm64"; $$env:CGO_ENABLED="0"; go build -tags lambda.norpc -o "$(BIN_DIR)/bootstrap" ./gql-token-refresher'
+	powershell -Command 'Compress-Archive -Path "$(BIN_DIR)/bootstrap" -DestinationPath "$(BIN_DIR)/gql-token-refresher.zip" -Force'
 
-deploy-get-token-test: build-get-token-test
-	cd get-token-test && npx serverless deploy --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+deploy-gql-token-refresher: build-gql-token-refresher
+	cd gql-token-refresher && npx serverless deploy --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
 
-remove-get-token-test:
-	cd get-token-test && npx serverless remove --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
+remove-gql-token-refresher:
+	cd gql-token-refresher && npx serverless remove --aws-profile $(PROFILE) --region $(REGION) -s $(STAGE)
 
 # =============== hello-world ===============
 build-hello-world: $(BIN_DIR)

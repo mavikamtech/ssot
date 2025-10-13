@@ -79,6 +79,7 @@ func updateSecretTokensOnly(ctx context.Context, secretName string, token Post) 
 	m["access_token"] = token.AccessToken
 	m["expires_in"] = token.ExpiresIn
 	m["token_type"] = token.TokenType
+	m["auth_header"] = `{   "Authorization": "` + token.TokenType + " " + token.AccessToken + `"}`
 
 	updatedJSON, err := json.Marshal(m)
 	if err != nil {
@@ -93,11 +94,11 @@ func updateSecretTokensOnly(ctx context.Context, secretName string, token Post) 
 		return fmt.Errorf("failed to update secret: %v", err)
 	}
 
-	fmt.Println("✅ Secret token fields updated successfully:", secretName)
+	fmt.Println("Secret token fields updated successfully:", secretName)
 	return nil
 }
 
-func handler(ctx context.Context, req events.LambdaFunctionURLRequest) (Resp, error) {
+func handler(ctx context.Context, _ events.LambdaFunctionURLRequest) (Resp, error) {
 
 	raw := os.Getenv("SECRET_NAMES")
 	if raw == "" {
@@ -115,14 +116,14 @@ func handler(ctx context.Context, req events.LambdaFunctionURLRequest) (Resp, er
 	if len(secretNames) == 0 {
 		return Resp{}, fmt.Errorf("SECRET_NAMES is empty after parsing")
 	}
-	fmt.Println("🔧 Secrets to process:", secretNames)
+	fmt.Println("Secrets to process:", secretNames)
 
 	for _, secretName := range secretNames {
 		fmt.Println("=== Processing secret:", secretName, "===")
 
 		secret, err := getSecret(ctx, secretName)
 		if err != nil {
-			fmt.Printf("❌ Error reading secret %s: %v\n", secretName, err)
+			fmt.Printf("Error reading secret %s: %v\n", secretName, err)
 			continue
 		}
 
@@ -147,7 +148,7 @@ func handler(ctx context.Context, req events.LambdaFunctionURLRequest) (Resp, er
 
 		r, err := http.NewRequest("POST", posturl, bytes.NewBuffer(body))
 		if err != nil {
-			fmt.Printf("❌ Error building request for %s: %v\n", secretName, err)
+			fmt.Printf("Error building request for %s: %v\n", secretName, err)
 			continue
 		}
 
@@ -156,20 +157,20 @@ func handler(ctx context.Context, req events.LambdaFunctionURLRequest) (Resp, er
 		client := &http.Client{}
 		res, err := client.Do(r)
 		if err != nil {
-			fmt.Printf("❌ HTTP request failed for %s: %v\n", secretName, err)
+			fmt.Printf("HTTP request failed for %s: %v\n", secretName, err)
 			continue
 		}
 
 		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
-			fmt.Printf("❌ HTTP request for %s returned status %s\n", secretName, res.Status)
+			fmt.Printf("HTTP request for %s returned status %s\n", secretName, res.Status)
 			continue
 		}
 
 		post := &Post{}
 		if err := json.NewDecoder(res.Body).Decode(post); err != nil {
-			fmt.Printf("❌ Failed to decode response for %s: %v\n", secretName, err)
+			fmt.Printf("Failed to decode response for %s: %v\n", secretName, err)
 			continue
 		}
 		maskedToken := "****"
@@ -182,7 +183,7 @@ func handler(ctx context.Context, req events.LambdaFunctionURLRequest) (Resp, er
 		fmt.Println("TokenType:", post.TokenType)
 
 		if err := updateSecretTokensOnly(ctx, secretName, *post); err != nil {
-			fmt.Printf("❌ Failed to update secret %s: %v\n", secretName, err)
+			fmt.Printf("Failed to update secret %s: %v\n", secretName, err)
 			continue
 		}
 
