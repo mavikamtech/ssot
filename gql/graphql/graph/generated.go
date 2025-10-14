@@ -97,7 +97,7 @@ type ComplexityRoot struct {
 	}
 
 	LoanCashFlows struct {
-		ByLoanCode func(childComplexity int, loanCode []*string) int
+		ByLoanCode func(childComplexity int, loanCode []*string, endDate *string) int
 	}
 
 	Mutation struct {
@@ -125,7 +125,7 @@ type ComplexityRoot struct {
 }
 
 type LoanCashFlowsResolver interface {
-	ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode []*string) ([]*model.LoanCashFlow, error)
+	ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode []*string, endDate *string) ([]*model.LoanCashFlow, error)
 }
 type MutationResolver interface {
 	AddUserACL(ctx context.Context, input model.AddUserACLInput) (*model.ACLMutationResult, error)
@@ -389,7 +389,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.LoanCashFlows.ByLoanCode(childComplexity, args["loanCode"].([]*string)), true
+		return e.complexity.LoanCashFlows.ByLoanCode(childComplexity, args["loanCode"].([]*string), args["endDate"].(*string)), true
 
 	case "Mutation.addGroupACL":
 		if e.complexity.Mutation.AddGroupACL == nil {
@@ -629,6 +629,11 @@ func (ec *executionContext) field_LoanCashFlows_byLoanCode_args(ctx context.Cont
 		return nil, err
 	}
 	args["loanCode"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "endDate", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["endDate"] = arg1
 	return args, nil
 }
 
@@ -1841,7 +1846,7 @@ func (ec *executionContext) _LoanCashFlows_byLoanCode(ctx context.Context, field
 		ec.fieldContext_LoanCashFlows_byLoanCode,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.LoanCashFlows().ByLoanCode(ctx, obj, fc.Args["loanCode"].([]*string))
+			return ec.resolvers.LoanCashFlows().ByLoanCode(ctx, obj, fc.Args["loanCode"].([]*string), fc.Args["endDate"].(*string))
 		},
 		nil,
 		ec.marshalNLoanCashFlow2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ,
