@@ -70,8 +70,8 @@ type ComplexityRoot struct {
 	}
 
 	LoanCashFlow struct {
-		Accrualenddate                   func(childComplexity int) int
-		Accrualstartdate                 func(childComplexity int) int
+		AccrualEndDate                   func(childComplexity int) int
+		AccrualStartDate                 func(childComplexity int) int
 		Balance                          func(childComplexity int) int
 		CapitalizedFee                   func(childComplexity int) int
 		CapitalizedInterest              func(childComplexity int) int
@@ -79,20 +79,20 @@ type ComplexityRoot struct {
 		CapitalizedOtherFees             func(childComplexity int) int
 		Commitment                       func(childComplexity int) int
 		DrawActualPrincipal              func(childComplexity int) int
-		Ebalance                         func(childComplexity int) int
-		GlPerioddate                     func(childComplexity int) int
+		EBalance                         func(childComplexity int) int
+		GlPeriodDate                     func(childComplexity int) int
 		Interest                         func(childComplexity int) int
 		LeverageActivity                 func(childComplexity int) int
 		LeverageBalance                  func(childComplexity int) int
 		LeverageInterest                 func(childComplexity int) int
-		Loancode                         func(childComplexity int) int
-		Loandesc                         func(childComplexity int) int
+		LoanCode                         func(childComplexity int) int
+		LoanDesc                         func(childComplexity int) int
 		MaxHmy                           func(childComplexity int) int
-		Paymentnumber                    func(childComplexity int) int
-		Postdate                         func(childComplexity int) int
-		Propertycode                     func(childComplexity int) int
-		Propertyname                     func(childComplexity int) int
-		Sbalance                         func(childComplexity int) int
+		PaymentNumber                    func(childComplexity int) int
+		PostDate                         func(childComplexity int) int
+		PropertyCode                     func(childComplexity int) int
+		PropertyName                     func(childComplexity int) int
+		SBalance                         func(childComplexity int) int
 		Status                           func(childComplexity int) int
 	}
 
@@ -234,18 +234,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.FieldFilter.IncludeList(childComplexity), true
 
-	case "LoanCashFlow.accrualenddate":
-		if e.complexity.LoanCashFlow.Accrualenddate == nil {
+	case "LoanCashFlow.accrualEndDate":
+		if e.complexity.LoanCashFlow.AccrualEndDate == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Accrualenddate(childComplexity), true
-	case "LoanCashFlow.accrualstartdate":
-		if e.complexity.LoanCashFlow.Accrualstartdate == nil {
+		return e.complexity.LoanCashFlow.AccrualEndDate(childComplexity), true
+	case "LoanCashFlow.accrualStartDate":
+		if e.complexity.LoanCashFlow.AccrualStartDate == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Accrualstartdate(childComplexity), true
+		return e.complexity.LoanCashFlow.AccrualStartDate(childComplexity), true
 	case "LoanCashFlow.balance":
 		if e.complexity.LoanCashFlow.Balance == nil {
 			break
@@ -288,18 +288,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.LoanCashFlow.DrawActualPrincipal(childComplexity), true
-	case "LoanCashFlow.ebalance":
-		if e.complexity.LoanCashFlow.Ebalance == nil {
+	case "LoanCashFlow.eBalance":
+		if e.complexity.LoanCashFlow.EBalance == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Ebalance(childComplexity), true
-	case "LoanCashFlow.glPerioddate":
-		if e.complexity.LoanCashFlow.GlPerioddate == nil {
+		return e.complexity.LoanCashFlow.EBalance(childComplexity), true
+	case "LoanCashFlow.glPeriodDate":
+		if e.complexity.LoanCashFlow.GlPeriodDate == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.GlPerioddate(childComplexity), true
+		return e.complexity.LoanCashFlow.GlPeriodDate(childComplexity), true
 	case "LoanCashFlow.interest":
 		if e.complexity.LoanCashFlow.Interest == nil {
 			break
@@ -324,54 +324,54 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.LoanCashFlow.LeverageInterest(childComplexity), true
-	case "LoanCashFlow.loancode":
-		if e.complexity.LoanCashFlow.Loancode == nil {
+	case "LoanCashFlow.loanCode":
+		if e.complexity.LoanCashFlow.LoanCode == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Loancode(childComplexity), true
-	case "LoanCashFlow.loandesc":
-		if e.complexity.LoanCashFlow.Loandesc == nil {
+		return e.complexity.LoanCashFlow.LoanCode(childComplexity), true
+	case "LoanCashFlow.loanDesc":
+		if e.complexity.LoanCashFlow.LoanDesc == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Loandesc(childComplexity), true
+		return e.complexity.LoanCashFlow.LoanDesc(childComplexity), true
 	case "LoanCashFlow.maxHmy":
 		if e.complexity.LoanCashFlow.MaxHmy == nil {
 			break
 		}
 
 		return e.complexity.LoanCashFlow.MaxHmy(childComplexity), true
-	case "LoanCashFlow.paymentnumber":
-		if e.complexity.LoanCashFlow.Paymentnumber == nil {
+	case "LoanCashFlow.paymentNumber":
+		if e.complexity.LoanCashFlow.PaymentNumber == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Paymentnumber(childComplexity), true
-	case "LoanCashFlow.postdate":
-		if e.complexity.LoanCashFlow.Postdate == nil {
+		return e.complexity.LoanCashFlow.PaymentNumber(childComplexity), true
+	case "LoanCashFlow.postDate":
+		if e.complexity.LoanCashFlow.PostDate == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Postdate(childComplexity), true
-	case "LoanCashFlow.propertycode":
-		if e.complexity.LoanCashFlow.Propertycode == nil {
+		return e.complexity.LoanCashFlow.PostDate(childComplexity), true
+	case "LoanCashFlow.propertyCode":
+		if e.complexity.LoanCashFlow.PropertyCode == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Propertycode(childComplexity), true
-	case "LoanCashFlow.propertyname":
-		if e.complexity.LoanCashFlow.Propertyname == nil {
+		return e.complexity.LoanCashFlow.PropertyCode(childComplexity), true
+	case "LoanCashFlow.propertyName":
+		if e.complexity.LoanCashFlow.PropertyName == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Propertyname(childComplexity), true
-	case "LoanCashFlow.sbalance":
-		if e.complexity.LoanCashFlow.Sbalance == nil {
+		return e.complexity.LoanCashFlow.PropertyName(childComplexity), true
+	case "LoanCashFlow.sBalance":
+		if e.complexity.LoanCashFlow.SBalance == nil {
 			break
 		}
 
-		return e.complexity.LoanCashFlow.Sbalance(childComplexity), true
+		return e.complexity.LoanCashFlow.SBalance(childComplexity), true
 	case "LoanCashFlow.status":
 		if e.complexity.LoanCashFlow.Status == nil {
 			break
@@ -1137,14 +1137,14 @@ func (ec *executionContext) fieldContext_FieldFilter_filterType(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_loancode(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_loanCode(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_loancode,
+		ec.fieldContext_LoanCashFlow_loanCode,
 		func(ctx context.Context) (any, error) {
-			return obj.Loancode, nil
+			return obj.LoanCode, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -1153,7 +1153,7 @@ func (ec *executionContext) _LoanCashFlow_loancode(ctx context.Context, field gr
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_loancode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_loanCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1195,14 +1195,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_maxHmy(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_accrualenddate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_accrualEndDate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_accrualenddate,
+		ec.fieldContext_LoanCashFlow_accrualEndDate,
 		func(ctx context.Context) (any, error) {
-			return obj.Accrualenddate, nil
+			return obj.AccrualEndDate, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1211,7 +1211,7 @@ func (ec *executionContext) _LoanCashFlow_accrualenddate(ctx context.Context, fi
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_accrualenddate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_accrualEndDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1224,14 +1224,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_accrualenddate(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_accrualstartdate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_accrualStartDate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_accrualstartdate,
+		ec.fieldContext_LoanCashFlow_accrualStartDate,
 		func(ctx context.Context) (any, error) {
-			return obj.Accrualstartdate, nil
+			return obj.AccrualStartDate, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1240,7 +1240,7 @@ func (ec *executionContext) _LoanCashFlow_accrualstartdate(ctx context.Context, 
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_accrualstartdate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_accrualStartDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1456,14 +1456,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_drawActualPrincipal(_ cont
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_ebalance(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_eBalance(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_ebalance,
+		ec.fieldContext_LoanCashFlow_eBalance,
 		func(ctx context.Context) (any, error) {
-			return obj.Ebalance, nil
+			return obj.EBalance, nil
 		},
 		nil,
 		ec.marshalOFloat2ᚖfloat64,
@@ -1472,7 +1472,7 @@ func (ec *executionContext) _LoanCashFlow_ebalance(ctx context.Context, field gr
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_ebalance(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_eBalance(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1485,14 +1485,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_ebalance(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_glPerioddate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_glPeriodDate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_glPerioddate,
+		ec.fieldContext_LoanCashFlow_glPeriodDate,
 		func(ctx context.Context) (any, error) {
-			return obj.GlPerioddate, nil
+			return obj.GlPeriodDate, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1501,7 +1501,7 @@ func (ec *executionContext) _LoanCashFlow_glPerioddate(ctx context.Context, fiel
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_glPerioddate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_glPeriodDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1630,14 +1630,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_leverageInterest(_ context
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_loandesc(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_loanDesc(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_loandesc,
+		ec.fieldContext_LoanCashFlow_loanDesc,
 		func(ctx context.Context) (any, error) {
-			return obj.Loandesc, nil
+			return obj.LoanDesc, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1646,7 +1646,7 @@ func (ec *executionContext) _LoanCashFlow_loandesc(ctx context.Context, field gr
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_loandesc(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_loanDesc(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1659,14 +1659,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_loandesc(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_paymentnumber(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_paymentNumber(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_paymentnumber,
+		ec.fieldContext_LoanCashFlow_paymentNumber,
 		func(ctx context.Context) (any, error) {
-			return obj.Paymentnumber, nil
+			return obj.PaymentNumber, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1675,7 +1675,7 @@ func (ec *executionContext) _LoanCashFlow_paymentnumber(ctx context.Context, fie
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_paymentnumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_paymentNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1688,14 +1688,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_paymentnumber(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_postdate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_postDate(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_postdate,
+		ec.fieldContext_LoanCashFlow_postDate,
 		func(ctx context.Context) (any, error) {
-			return obj.Postdate, nil
+			return obj.PostDate, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1704,7 +1704,7 @@ func (ec *executionContext) _LoanCashFlow_postdate(ctx context.Context, field gr
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_postdate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_postDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1717,14 +1717,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_postdate(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_propertycode(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_propertyCode(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_propertycode,
+		ec.fieldContext_LoanCashFlow_propertyCode,
 		func(ctx context.Context) (any, error) {
-			return obj.Propertycode, nil
+			return obj.PropertyCode, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1733,7 +1733,7 @@ func (ec *executionContext) _LoanCashFlow_propertycode(ctx context.Context, fiel
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_propertycode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_propertyCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1746,14 +1746,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_propertycode(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_propertyname(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_propertyName(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_propertyname,
+		ec.fieldContext_LoanCashFlow_propertyName,
 		func(ctx context.Context) (any, error) {
-			return obj.Propertyname, nil
+			return obj.PropertyName, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1762,7 +1762,7 @@ func (ec *executionContext) _LoanCashFlow_propertyname(ctx context.Context, fiel
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_propertyname(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_propertyName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1775,14 +1775,14 @@ func (ec *executionContext) fieldContext_LoanCashFlow_propertyname(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _LoanCashFlow_sbalance(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoanCashFlow_sBalance(ctx context.Context, field graphql.CollectedField, obj *model.LoanCashFlow) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_LoanCashFlow_sbalance,
+		ec.fieldContext_LoanCashFlow_sBalance,
 		func(ctx context.Context) (any, error) {
-			return obj.Sbalance, nil
+			return obj.SBalance, nil
 		},
 		nil,
 		ec.marshalOFloat2ᚖfloat64,
@@ -1791,7 +1791,7 @@ func (ec *executionContext) _LoanCashFlow_sbalance(ctx context.Context, field gr
 	)
 }
 
-func (ec *executionContext) fieldContext_LoanCashFlow_sbalance(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LoanCashFlow_sBalance(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LoanCashFlow",
 		Field:      field,
@@ -1858,14 +1858,14 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "loancode":
-				return ec.fieldContext_LoanCashFlow_loancode(ctx, field)
+			case "loanCode":
+				return ec.fieldContext_LoanCashFlow_loanCode(ctx, field)
 			case "maxHmy":
 				return ec.fieldContext_LoanCashFlow_maxHmy(ctx, field)
-			case "accrualenddate":
-				return ec.fieldContext_LoanCashFlow_accrualenddate(ctx, field)
-			case "accrualstartdate":
-				return ec.fieldContext_LoanCashFlow_accrualstartdate(ctx, field)
+			case "accrualEndDate":
+				return ec.fieldContext_LoanCashFlow_accrualEndDate(ctx, field)
+			case "accrualStartDate":
+				return ec.fieldContext_LoanCashFlow_accrualStartDate(ctx, field)
 			case "balance":
 				return ec.fieldContext_LoanCashFlow_balance(ctx, field)
 			case "capitalizedFee":
@@ -1880,10 +1880,10 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 				return ec.fieldContext_LoanCashFlow_commitment(ctx, field)
 			case "drawActualPrincipal":
 				return ec.fieldContext_LoanCashFlow_drawActualPrincipal(ctx, field)
-			case "ebalance":
-				return ec.fieldContext_LoanCashFlow_ebalance(ctx, field)
-			case "glPerioddate":
-				return ec.fieldContext_LoanCashFlow_glPerioddate(ctx, field)
+			case "eBalance":
+				return ec.fieldContext_LoanCashFlow_eBalance(ctx, field)
+			case "glPeriodDate":
+				return ec.fieldContext_LoanCashFlow_glPeriodDate(ctx, field)
 			case "interest":
 				return ec.fieldContext_LoanCashFlow_interest(ctx, field)
 			case "leverageActivity":
@@ -1892,18 +1892,18 @@ func (ec *executionContext) fieldContext_LoanCashFlows_byLoanCode(ctx context.Co
 				return ec.fieldContext_LoanCashFlow_leverageBalance(ctx, field)
 			case "leverageInterest":
 				return ec.fieldContext_LoanCashFlow_leverageInterest(ctx, field)
-			case "loandesc":
-				return ec.fieldContext_LoanCashFlow_loandesc(ctx, field)
-			case "paymentnumber":
-				return ec.fieldContext_LoanCashFlow_paymentnumber(ctx, field)
-			case "postdate":
-				return ec.fieldContext_LoanCashFlow_postdate(ctx, field)
-			case "propertycode":
-				return ec.fieldContext_LoanCashFlow_propertycode(ctx, field)
-			case "propertyname":
-				return ec.fieldContext_LoanCashFlow_propertyname(ctx, field)
-			case "sbalance":
-				return ec.fieldContext_LoanCashFlow_sbalance(ctx, field)
+			case "loanDesc":
+				return ec.fieldContext_LoanCashFlow_loanDesc(ctx, field)
+			case "paymentNumber":
+				return ec.fieldContext_LoanCashFlow_paymentNumber(ctx, field)
+			case "postDate":
+				return ec.fieldContext_LoanCashFlow_postDate(ctx, field)
+			case "propertyCode":
+				return ec.fieldContext_LoanCashFlow_propertyCode(ctx, field)
+			case "propertyName":
+				return ec.fieldContext_LoanCashFlow_propertyName(ctx, field)
+			case "sBalance":
+				return ec.fieldContext_LoanCashFlow_sBalance(ctx, field)
 			case "status":
 				return ec.fieldContext_LoanCashFlow_status(ctx, field)
 			}
@@ -4375,17 +4375,17 @@ func (ec *executionContext) _LoanCashFlow(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LoanCashFlow")
-		case "loancode":
-			out.Values[i] = ec._LoanCashFlow_loancode(ctx, field, obj)
+		case "loanCode":
+			out.Values[i] = ec._LoanCashFlow_loanCode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "maxHmy":
 			out.Values[i] = ec._LoanCashFlow_maxHmy(ctx, field, obj)
-		case "accrualenddate":
-			out.Values[i] = ec._LoanCashFlow_accrualenddate(ctx, field, obj)
-		case "accrualstartdate":
-			out.Values[i] = ec._LoanCashFlow_accrualstartdate(ctx, field, obj)
+		case "accrualEndDate":
+			out.Values[i] = ec._LoanCashFlow_accrualEndDate(ctx, field, obj)
+		case "accrualStartDate":
+			out.Values[i] = ec._LoanCashFlow_accrualStartDate(ctx, field, obj)
 		case "balance":
 			out.Values[i] = ec._LoanCashFlow_balance(ctx, field, obj)
 		case "capitalizedFee":
@@ -4400,10 +4400,10 @@ func (ec *executionContext) _LoanCashFlow(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._LoanCashFlow_commitment(ctx, field, obj)
 		case "drawActualPrincipal":
 			out.Values[i] = ec._LoanCashFlow_drawActualPrincipal(ctx, field, obj)
-		case "ebalance":
-			out.Values[i] = ec._LoanCashFlow_ebalance(ctx, field, obj)
-		case "glPerioddate":
-			out.Values[i] = ec._LoanCashFlow_glPerioddate(ctx, field, obj)
+		case "eBalance":
+			out.Values[i] = ec._LoanCashFlow_eBalance(ctx, field, obj)
+		case "glPeriodDate":
+			out.Values[i] = ec._LoanCashFlow_glPeriodDate(ctx, field, obj)
 		case "interest":
 			out.Values[i] = ec._LoanCashFlow_interest(ctx, field, obj)
 		case "leverageActivity":
@@ -4412,18 +4412,18 @@ func (ec *executionContext) _LoanCashFlow(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._LoanCashFlow_leverageBalance(ctx, field, obj)
 		case "leverageInterest":
 			out.Values[i] = ec._LoanCashFlow_leverageInterest(ctx, field, obj)
-		case "loandesc":
-			out.Values[i] = ec._LoanCashFlow_loandesc(ctx, field, obj)
-		case "paymentnumber":
-			out.Values[i] = ec._LoanCashFlow_paymentnumber(ctx, field, obj)
-		case "postdate":
-			out.Values[i] = ec._LoanCashFlow_postdate(ctx, field, obj)
-		case "propertycode":
-			out.Values[i] = ec._LoanCashFlow_propertycode(ctx, field, obj)
-		case "propertyname":
-			out.Values[i] = ec._LoanCashFlow_propertyname(ctx, field, obj)
-		case "sbalance":
-			out.Values[i] = ec._LoanCashFlow_sbalance(ctx, field, obj)
+		case "loanDesc":
+			out.Values[i] = ec._LoanCashFlow_loanDesc(ctx, field, obj)
+		case "paymentNumber":
+			out.Values[i] = ec._LoanCashFlow_paymentNumber(ctx, field, obj)
+		case "postDate":
+			out.Values[i] = ec._LoanCashFlow_postDate(ctx, field, obj)
+		case "propertyCode":
+			out.Values[i] = ec._LoanCashFlow_propertyCode(ctx, field, obj)
+		case "propertyName":
+			out.Values[i] = ec._LoanCashFlow_propertyName(ctx, field, obj)
+		case "sBalance":
+			out.Values[i] = ec._LoanCashFlow_sBalance(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._LoanCashFlow_status(ctx, field, obj)
 		default:
