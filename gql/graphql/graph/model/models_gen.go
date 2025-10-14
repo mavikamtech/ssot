@@ -44,10 +44,10 @@ type FieldFilterInput struct {
 }
 
 type LoanCashFlow struct {
-	Loancode                         string   `json:"loancode"`
+	LoanCode                         string   `json:"loanCode"`
 	MaxHmy                           *string  `json:"maxHmy,omitempty"`
-	Accrualenddate                   *string  `json:"accrualenddate,omitempty"`
-	Accrualstartdate                 *string  `json:"accrualstartdate,omitempty"`
+	AccrualEndDate                   *string  `json:"accrualEndDate,omitempty"`
+	AccrualStartDate                 *string  `json:"accrualStartDate,omitempty"`
 	Balance                          *float64 `json:"balance,omitempty"`
 	CapitalizedFee                   *float64 `json:"capitalizedFee,omitempty"`
 	CapitalizedInterest              *float64 `json:"capitalizedInterest,omitempty"`
@@ -55,18 +55,18 @@ type LoanCashFlow struct {
 	CapitalizedOtherFees             *float64 `json:"capitalizedOtherFees,omitempty"`
 	Commitment                       *float64 `json:"commitment,omitempty"`
 	DrawActualPrincipal              *float64 `json:"drawActualPrincipal,omitempty"`
-	Ebalance                         *float64 `json:"ebalance,omitempty"`
-	GlPerioddate                     *string  `json:"glPerioddate,omitempty"`
+	EBalance                         *float64 `json:"eBalance,omitempty"`
+	GlPeriodDate                     *string  `json:"glPeriodDate,omitempty"`
 	Interest                         *float64 `json:"interest,omitempty"`
 	LeverageActivity                 *float64 `json:"leverageActivity,omitempty"`
 	LeverageBalance                  *float64 `json:"leverageBalance,omitempty"`
 	LeverageInterest                 *float64 `json:"leverageInterest,omitempty"`
-	Loandesc                         *string  `json:"loandesc,omitempty"`
-	Paymentnumber                    *string  `json:"paymentnumber,omitempty"`
-	Postdate                         *string  `json:"postdate,omitempty"`
-	Propertycode                     *string  `json:"propertycode,omitempty"`
-	Propertyname                     *string  `json:"propertyname,omitempty"`
-	Sbalance                         *float64 `json:"sbalance,omitempty"`
+	LoanDesc                         *string  `json:"loanDesc,omitempty"`
+	PaymentNumber                    *string  `json:"paymentNumber,omitempty"`
+	PostDate                         *string  `json:"postDate,omitempty"`
+	PropertyCode                     *string  `json:"propertyCode,omitempty"`
+	PropertyName                     *string  `json:"propertyName,omitempty"`
+	SBalance                         *float64 `json:"sBalance,omitempty"`
 	Status                           *string  `json:"status,omitempty"`
 }
 

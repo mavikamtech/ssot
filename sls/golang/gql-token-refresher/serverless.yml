@@ -1,0 +1,33 @@
+service: gql-token-refresher
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  runtime: provided.al2
+  architecture: arm64
+  deploymentBucket:
+    name: ssot-lambda-build-deploy
+  iam:
+    role: arn:aws:iam::167067248318:role/MavikLambdaRole
+
+package:
+    artifact: ../bin/gql-token-refresher.zip
+
+functions:
+  gql-token-refresher:
+    name: gql-token-refresher-${self:provider.stage}
+    handler: bootstrap
+    url: true
+    environment:
+      SECRET_NAMES: "ssot-auth-client-staging,ssot-auth-client-prod"
+    vpc:
+      securityGroupIds:
+        - sg-0ffeef1c57a795a0d
+      subnetIds:
+        - subnet-07a88fae33859673b
+        - subnet-0c869995323aac9f6
+    events:
+      - schedule: 
+          rate: cron(0 * * * ? *)

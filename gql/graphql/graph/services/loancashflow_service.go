@@ -89,10 +89,10 @@ func (s *LoanCashFlowService) GetByLoanCodeWithFieldFilters(ctx context.Context,
 		var getFieldValue func(any) string
 
 		switch fieldName {
-		case "loancode":
+		case "LoanCode":
 			getFieldValue = func(item any) string {
 				if lcf, ok := item.(*model.LoanCashFlow); ok {
-					return lcf.Loancode
+					return lcf.LoanCode
 				}
 				return ""
 			}
@@ -122,7 +122,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("loancode") {
 		if loanCodeAttr, ok := item["loancode"]; ok {
 			if s, ok := loanCodeAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.Loancode = s.Value
+				loanCashFlow.LoanCode = s.Value
 			}
 		}
 	}
@@ -138,7 +138,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("accrualenddate") {
 		if accrualenddateAttr, ok := item["accrualenddate"]; ok {
 			if s, ok := accrualenddateAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.Accrualenddate = &s.Value
+				loanCashFlow.AccrualEndDate = &s.Value
 			}
 		}
 	}
@@ -146,7 +146,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("accrualstartdate") {
 		if accrualstartdateAttr, ok := item["accrualstartdate"]; ok {
 			if s, ok := accrualstartdateAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.Accrualstartdate = &s.Value
+				loanCashFlow.AccrualStartDate = &s.Value
 			}
 		}
 	}
@@ -225,7 +225,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 		if ebalanceAttr, ok := item["ebalance"]; ok {
 			if n, ok := ebalanceAttr.(*types.AttributeValueMemberN); ok {
 				if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
-					loanCashFlow.Ebalance = &val
+					loanCashFlow.EBalance = &val
 				}
 			}
 		}
@@ -234,7 +234,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("glPerioddate") {
 		if glPerioddateAttr, ok := item["glPerioddate"]; ok {
 			if s, ok := glPerioddateAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.GlPerioddate = &s.Value
+				loanCashFlow.GlPeriodDate = &s.Value
 			}
 		}
 	}
@@ -282,7 +282,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("loandesc") {
 		if loandescAttr, ok := item["loandesc"]; ok {
 			if s, ok := loandescAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.Loandesc = &s.Value
+				loanCashFlow.LoanDesc = &s.Value
 			}
 		}
 	}
@@ -290,7 +290,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("paymentnumber") {
 		if paymentnumberAttr, ok := item["paymentnumber"]; ok {
 			if s, ok := paymentnumberAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.Paymentnumber = &s.Value
+				loanCashFlow.PaymentNumber = &s.Value
 			}
 		}
 	}
@@ -298,7 +298,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("postdate") {
 		if postdateAttr, ok := item["postdate"]; ok {
 			if s, ok := postdateAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.Postdate = &s.Value
+				loanCashFlow.PostDate = &s.Value
 			}
 		}
 	}
@@ -306,7 +306,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("propertycode") {
 		if propertycodeAttr, ok := item["propertycode"]; ok {
 			if s, ok := propertycodeAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.Propertycode = &s.Value
+				loanCashFlow.PropertyCode = &s.Value
 			}
 		}
 	}
@@ -314,7 +314,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 	if columnPermissions.IsAllowed("propertyname") {
 		if propertynameAttr, ok := item["propertyname"]; ok {
 			if s, ok := propertynameAttr.(*types.AttributeValueMemberS); ok {
-				loanCashFlow.Propertyname = &s.Value
+				loanCashFlow.PropertyName = &s.Value
 			}
 		}
 	}
@@ -323,7 +323,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlowFiltered(item map[string]types.A
 		if sbalanceAttr, ok := item["sbalance"]; ok {
 			if n, ok := sbalanceAttr.(*types.AttributeValueMemberN); ok {
 				if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
-					loanCashFlow.Sbalance = &val
+					loanCashFlow.SBalance = &val
 				}
 			}
 		}
@@ -345,7 +345,7 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 
 	if loanCodeAttr, ok := item["loancode"]; ok {
 		if s, ok := loanCodeAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Loancode = s.Value
+			loanCashFlow.LoanCode = s.Value
 		}
 	}
 
@@ -357,13 +357,13 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 
 	if accrualenddateAttr, ok := item["accrualenddate"]; ok {
 		if s, ok := accrualenddateAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Accrualenddate = &s.Value
+			loanCashFlow.AccrualEndDate = &s.Value
 		}
 	}
 
 	if accrualstartdateAttr, ok := item["accrualstartdate"]; ok {
 		if s, ok := accrualstartdateAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Accrualstartdate = &s.Value
+			loanCashFlow.AccrualStartDate = &s.Value
 		}
 	}
 
@@ -433,14 +433,14 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 	if ebalanceAttr, ok := item["ebalance"]; ok {
 		if n, ok := ebalanceAttr.(*types.AttributeValueMemberN); ok {
 			if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
-				loanCashFlow.Ebalance = &val
+				loanCashFlow.EBalance = &val
 			}
 		}
 	}
 
 	if glPerioddateAttr, ok := item["glPerioddate"]; ok {
 		if s, ok := glPerioddateAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.GlPerioddate = &s.Value
+			loanCashFlow.GlPeriodDate = &s.Value
 		}
 	}
 
@@ -478,38 +478,38 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 
 	if loandescAttr, ok := item["loandesc"]; ok {
 		if s, ok := loandescAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Loandesc = &s.Value
+			loanCashFlow.LoanDesc = &s.Value
 		}
 	}
 
 	if paymentnumberAttr, ok := item["paymentnumber"]; ok {
 		if s, ok := paymentnumberAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Paymentnumber = &s.Value
+			loanCashFlow.PaymentNumber = &s.Value
 		}
 	}
 
 	if postdateAttr, ok := item["postdate"]; ok {
 		if s, ok := postdateAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Postdate = &s.Value
+			loanCashFlow.PostDate = &s.Value
 		}
 	}
 
 	if propertycodeAttr, ok := item["propertycode"]; ok {
 		if s, ok := propertycodeAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Propertycode = &s.Value
+			loanCashFlow.PropertyCode = &s.Value
 		}
 	}
 
 	if propertynameAttr, ok := item["propertyname"]; ok {
 		if s, ok := propertynameAttr.(*types.AttributeValueMemberS); ok {
-			loanCashFlow.Propertyname = &s.Value
+			loanCashFlow.PropertyName = &s.Value
 		}
 	}
 
 	if sbalanceAttr, ok := item["sbalance"]; ok {
 		if n, ok := sbalanceAttr.(*types.AttributeValueMemberN); ok {
 			if val, err := strconv.ParseFloat(n.Value, 64); err == nil {
-				loanCashFlow.Sbalance = &val
+				loanCashFlow.SBalance = &val
 			}
 		}
 	}
@@ -521,4 +521,170 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 	}
 
 	return loanCashFlow, nil
+}
+
+// GetAllLoans retrieves all loan cash flows with column and field filtering.
+func (s *LoanCashFlowService) GetAllLoans(ctx context.Context, columnPermissions *acl.ColumnPermissions) ([]*model.LoanCashFlow, error) {
+	input := &dynamodb.ScanInput{
+		TableName: aws.String(s.tableName),
+		Limit:     aws.Int32(1000),
+	}
+
+	var loanCashFlows []*model.LoanCashFlow
+	var lastEvaluatedKey map[string]types.AttributeValue
+
+	for {
+		result, err := s.client.Scan(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan loan cash flows: %w", err)
+		}
+
+		for _, item := range result.Items {
+			loanCashFlow, err := s.itemToLoanCashFlowFiltered(item, columnPermissions)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert DynamoDB item: %w", err)
+			}
+			loanCashFlows = append(loanCashFlows, loanCashFlow)
+		}
+
+		if len(result.LastEvaluatedKey) == 0 {
+			break
+		}
+		lastEvaluatedKey = result.LastEvaluatedKey
+		input.ExclusiveStartKey = lastEvaluatedKey
+	}
+
+	return loanCashFlows, nil
+}
+
+// GetAllLoansWithFieldFilters retrieves all loan cash flows and applies field-level filtering
+func (s *LoanCashFlowService) GetAllLoansWithFieldFilters(ctx context.Context, columnPermissions *acl.ColumnPermissions, fieldFilters map[string]acl.FieldFilter) ([]*model.LoanCashFlow, error) {
+	// First get the data with column filtering
+	loanCashFlows, err := s.GetAllLoans(ctx, columnPermissions)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply field filters
+	if len(fieldFilters) == 0 {
+		return loanCashFlows, nil
+	}
+
+	// Convert to []any for filtering
+	var dataInterface []any
+	for _, loanCashFlow := range loanCashFlows {
+		dataInterface = append(dataInterface, loanCashFlow)
+	}
+
+	// Apply each field filter
+	for fieldName := range fieldFilters {
+		var getFieldValue func(any) string
+
+		switch fieldName {
+		case "loancode":
+			getFieldValue = func(item any) string {
+				if lcf, ok := item.(*model.LoanCashFlow); ok {
+					return lcf.LoanCode
+				}
+				return ""
+			}
+		default:
+			// Skip unknown fields
+			continue
+		}
+
+		dataInterface = acl.FilterArrayByField(dataInterface, fieldName, fieldFilters, getFieldValue)
+	}
+
+	// Convert back to []*model.LoanCashFlow
+	var filteredLoanCashFlows []*model.LoanCashFlow
+	for _, item := range dataInterface {
+		if lcf, ok := item.(*model.LoanCashFlow); ok {
+			filteredLoanCashFlows = append(filteredLoanCashFlows, lcf)
+		}
+	}
+
+	return filteredLoanCashFlows, nil
+}
+
+// GetByLoanCodes retrieves loan cash flows for multiple loan codes or all loans if empty array
+func (s *LoanCashFlowService) GetByLoanCodes(ctx context.Context, loanCodes []*string, columnPermissions *acl.ColumnPermissions) ([]*model.LoanCashFlow, error) {
+	// If loanCodes array is empty or nil, get all loans
+	if len(loanCodes) == 0 {
+		return s.GetAllLoans(ctx, columnPermissions)
+	}
+
+	var allLoanCashFlows []*model.LoanCashFlow
+
+	// Query for each loan code individually
+	for _, loanCodePtr := range loanCodes {
+		if loanCodePtr == nil {
+			continue // Skip nil loan codes
+		}
+
+		loanCode := *loanCodePtr
+		loanCashFlows, err := s.GetByLoanCode(ctx, loanCode, columnPermissions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get loan cash flows for loan code %s: %w", loanCode, err)
+		}
+
+		allLoanCashFlows = append(allLoanCashFlows, loanCashFlows...)
+	}
+
+	return allLoanCashFlows, nil
+}
+
+// GetByLoanCodesWithFieldFilters retrieves loan cash flows for multiple loan codes and applies field-level filtering
+func (s *LoanCashFlowService) GetByLoanCodesWithFieldFilters(ctx context.Context, loanCodes []*string, columnPermissions *acl.ColumnPermissions, fieldFilters map[string]acl.FieldFilter) ([]*model.LoanCashFlow, error) {
+	// If loanCodes array is empty or nil, get all loans with field filters
+	if len(loanCodes) == 0 {
+		return s.GetAllLoansWithFieldFilters(ctx, columnPermissions, fieldFilters)
+	}
+
+	// First get the data with column filtering
+	loanCashFlows, err := s.GetByLoanCodes(ctx, loanCodes, columnPermissions)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply field filters
+	if len(fieldFilters) == 0 {
+		return loanCashFlows, nil
+	}
+
+	// Convert to []any for filtering
+	var dataInterface []any
+	for _, loanCashFlow := range loanCashFlows {
+		dataInterface = append(dataInterface, loanCashFlow)
+	}
+
+	// Apply each field filter
+	for fieldName := range fieldFilters {
+		var getFieldValue func(any) string
+
+		switch fieldName {
+		case "loancode":
+			getFieldValue = func(item any) string {
+				if lcf, ok := item.(*model.LoanCashFlow); ok {
+					return lcf.LoanCode
+				}
+				return ""
+			}
+		default:
+			// Skip unknown fields
+			continue
+		}
+
+		dataInterface = acl.FilterArrayByField(dataInterface, fieldName, fieldFilters, getFieldValue)
+	}
+
+	// Convert back to []*model.LoanCashFlow
+	var filteredLoanCashFlows []*model.LoanCashFlow
+	for _, item := range dataInterface {
+		if lcf, ok := item.(*model.LoanCashFlow); ok {
+			filteredLoanCashFlows = append(filteredLoanCashFlows, lcf)
+		}
+	}
+
+	return filteredLoanCashFlows, nil
 }
