@@ -13,7 +13,7 @@ import (
 )
 
 // ByLoanCode is the resolver for the byLoanCode field.
-func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode string) ([]*model.LoanCashFlow, error) {
+func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode []*string, endDate *string) ([]*model.LoanCashFlow, error) {
 	// Check authentication
 	_, err := middleware.GetUserFromContext(ctx)
 	if err != nil {
@@ -33,11 +33,11 @@ func (r *loanCashFlowsResolver) ByLoanCode(ctx context.Context, obj *model.LoanC
 	if err != nil {
 		// If field filters fail, continue with column-only filtering
 		log.Printf("Warning: failed to get field filters: %v\n", err)
-		return r.ServiceManager.LoanCashFlowService.GetByLoanCode(ctx, loanCode, columnPermissions)
+		return r.ServiceManager.LoanCashFlowService.GetByLoanCodesWithEndDate(ctx, loanCode, endDate, columnPermissions)
 	}
 
-	// Use the enhanced service method with field filtering
-	return r.ServiceManager.LoanCashFlowService.GetByLoanCodeWithFieldFilters(ctx, loanCode, columnPermissions, fieldFilters)
+	// Use the enhanced service method with field filtering and end date
+	return r.ServiceManager.LoanCashFlowService.GetByLoanCodesWithEndDateAndFieldFilters(ctx, loanCode, endDate, columnPermissions, fieldFilters)
 }
 
 // AddUserACL is the resolver for the addUserACL field.
