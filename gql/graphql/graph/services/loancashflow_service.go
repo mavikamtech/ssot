@@ -89,7 +89,7 @@ func (s *LoanCashFlowService) GetByLoanCodeWithFieldFilters(ctx context.Context,
 		var getFieldValue func(any) string
 
 		switch fieldName {
-		case "loancode":
+		case "LoanCode":
 			getFieldValue = func(item any) string {
 				if lcf, ok := item.(*model.LoanCashFlow); ok {
 					return lcf.LoanCode
@@ -523,24 +523,35 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 	return loanCashFlow, nil
 }
 
-// GetAllLoans retrieves all loan cash flows with column and field filtering
+// GetAllLoans retrieves all loan cash flows with column and field filtering.
 func (s *LoanCashFlowService) GetAllLoans(ctx context.Context, columnPermissions *acl.ColumnPermissions) ([]*model.LoanCashFlow, error) {
 	input := &dynamodb.ScanInput{
 		TableName: aws.String(s.tableName),
-	}
-
-	result, err := s.client.Scan(ctx, input)
-	if err != nil {
-		return nil, fmt.Errorf("failed to scan loan cash flows: %w", err)
+		Limit:     aws.Int32(1000),
 	}
 
 	var loanCashFlows []*model.LoanCashFlow
-	for _, item := range result.Items {
-		loanCashFlow, err := s.itemToLoanCashFlowFiltered(item, columnPermissions)
+	var lastEvaluatedKey map[string]types.AttributeValue
+
+	for {
+		result, err := s.client.Scan(ctx, input)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert DynamoDB item: %w", err)
+			return nil, fmt.Errorf("failed to scan loan cash flows: %w", err)
 		}
-		loanCashFlows = append(loanCashFlows, loanCashFlow)
+
+		for _, item := range result.Items {
+			loanCashFlow, err := s.itemToLoanCashFlowFiltered(item, columnPermissions)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert DynamoDB item: %w", err)
+			}
+			loanCashFlows = append(loanCashFlows, loanCashFlow)
+		}
+
+		if len(result.LastEvaluatedKey) == 0 {
+			break
+		}
+		lastEvaluatedKey = result.LastEvaluatedKey
+		input.ExclusiveStartKey = lastEvaluatedKey
 	}
 
 	return loanCashFlows, nil
