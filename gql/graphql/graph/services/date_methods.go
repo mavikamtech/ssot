@@ -93,6 +93,7 @@ func (s *LoanCashFlowService) GetByLoanCodeWithEndDate(ctx context.Context, loan
 func (s *LoanCashFlowService) GetAllLoansWithEndDate(ctx context.Context, endDate *string, columnPermissions *acl.ColumnPermissions) ([]*model.LoanCashFlow, error) {
 	input := &dynamodb.ScanInput{
 		TableName: aws.String(s.tableName),
+		Limit:     aws.Int32(1000),
 	}
 
 	// Add date filtering if endDate is provided
@@ -113,18 +114,28 @@ func (s *LoanCashFlowService) GetAllLoansWithEndDate(ctx context.Context, endDat
 		}
 	}
 
-	result, err := s.client.Scan(ctx, input)
-	if err != nil {
-		return nil, fmt.Errorf("failed to scan loan cash flows: %w", err)
-	}
-
 	var loanCashFlows []*model.LoanCashFlow
-	for _, item := range result.Items {
-		loanCashFlow, err := s.itemToLoanCashFlowFiltered(item, columnPermissions)
+	var lastEvaluatedKey map[string]types.AttributeValue
+
+	for {
+		result, err := s.client.Scan(ctx, input)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert DynamoDB item: %w", err)
+			return nil, fmt.Errorf("failed to scan loan cash flows: %w", err)
 		}
-		loanCashFlows = append(loanCashFlows, loanCashFlow)
+
+		for _, item := range result.Items {
+			loanCashFlow, err := s.itemToLoanCashFlowFiltered(item, columnPermissions)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert DynamoDB item: %w", err)
+			}
+			loanCashFlows = append(loanCashFlows, loanCashFlow)
+		}
+
+		if len(result.LastEvaluatedKey) == 0 {
+			break
+		}
+		lastEvaluatedKey = result.LastEvaluatedKey
+		input.ExclusiveStartKey = lastEvaluatedKey
 	}
 
 	return loanCashFlows, nil
