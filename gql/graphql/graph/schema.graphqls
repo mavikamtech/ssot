@@ -27,7 +27,7 @@ type LoanCashFlow {
 }
 
 type LoanCashFlows {
-  byLoanCode(loanCode: String!): [LoanCashFlow!]!
+  byLoanCode(loanCode: [String]!): [LoanCashFlow!]!
 }
 
 type Query {

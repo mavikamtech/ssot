@@ -97,7 +97,7 @@ type ComplexityRoot struct {
 	}
 
 	LoanCashFlows struct {
-		ByLoanCode func(childComplexity int, loanCode string) int
+		ByLoanCode func(childComplexity int, loanCode []*string) int
 	}
 
 	Mutation struct {
@@ -125,7 +125,7 @@ type ComplexityRoot struct {
 }
 
 type LoanCashFlowsResolver interface {
-	ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode string) ([]*model.LoanCashFlow, error)
+	ByLoanCode(ctx context.Context, obj *model.LoanCashFlows, loanCode []*string) ([]*model.LoanCashFlow, error)
 }
 type MutationResolver interface {
 	AddUserACL(ctx context.Context, input model.AddUserACLInput) (*model.ACLMutationResult, error)
@@ -389,7 +389,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.LoanCashFlows.ByLoanCode(childComplexity, args["loanCode"].(string)), true
+		return e.complexity.LoanCashFlows.ByLoanCode(childComplexity, args["loanCode"].([]*string)), true
 
 	case "Mutation.addGroupACL":
 		if e.complexity.Mutation.AddGroupACL == nil {
@@ -624,7 +624,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_LoanCashFlows_byLoanCode_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "loanCode", ec.unmarshalNString2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "loanCode", ec.unmarshalNString2ᚕᚖstring)
 	if err != nil {
 		return nil, err
 	}
@@ -1841,7 +1841,7 @@ func (ec *executionContext) _LoanCashFlows_byLoanCode(ctx context.Context, field
 		ec.fieldContext_LoanCashFlows_byLoanCode,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.LoanCashFlows().ByLoanCode(ctx, obj, fc.Args["loanCode"].(string))
+			return ec.resolvers.LoanCashFlows().ByLoanCode(ctx, obj, fc.Args["loanCode"].([]*string))
 		},
 		nil,
 		ec.marshalNLoanCashFlow2ᚕᚖssotᚋgqlᚋgraphqlᚋgraphᚋmodelᚐLoanCashFlowᚄ,
@@ -5465,6 +5465,30 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 		if e == graphql.Null {
 			return graphql.Null
 		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v any) ([]*string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
 	}
 
 	return ret

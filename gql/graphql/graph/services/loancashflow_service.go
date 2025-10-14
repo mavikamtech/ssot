@@ -522,3 +522,158 @@ func (s *LoanCashFlowService) itemToLoanCashFlow(item map[string]types.Attribute
 
 	return loanCashFlow, nil
 }
+
+// GetAllLoans retrieves all loan cash flows with column and field filtering
+func (s *LoanCashFlowService) GetAllLoans(ctx context.Context, columnPermissions *acl.ColumnPermissions) ([]*model.LoanCashFlow, error) {
+	input := &dynamodb.ScanInput{
+		TableName: aws.String(s.tableName),
+	}
+
+	result, err := s.client.Scan(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan loan cash flows: %w", err)
+	}
+
+	var loanCashFlows []*model.LoanCashFlow
+	for _, item := range result.Items {
+		loanCashFlow, err := s.itemToLoanCashFlowFiltered(item, columnPermissions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert DynamoDB item: %w", err)
+		}
+		loanCashFlows = append(loanCashFlows, loanCashFlow)
+	}
+
+	return loanCashFlows, nil
+}
+
+// GetAllLoansWithFieldFilters retrieves all loan cash flows and applies field-level filtering
+func (s *LoanCashFlowService) GetAllLoansWithFieldFilters(ctx context.Context, columnPermissions *acl.ColumnPermissions, fieldFilters map[string]acl.FieldFilter) ([]*model.LoanCashFlow, error) {
+	// First get the data with column filtering
+	loanCashFlows, err := s.GetAllLoans(ctx, columnPermissions)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply field filters
+	if len(fieldFilters) == 0 {
+		return loanCashFlows, nil
+	}
+
+	// Convert to []any for filtering
+	var dataInterface []any
+	for _, loanCashFlow := range loanCashFlows {
+		dataInterface = append(dataInterface, loanCashFlow)
+	}
+
+	// Apply each field filter
+	for fieldName := range fieldFilters {
+		var getFieldValue func(any) string
+
+		switch fieldName {
+		case "loancode":
+			getFieldValue = func(item any) string {
+				if lcf, ok := item.(*model.LoanCashFlow); ok {
+					return lcf.LoanCode
+				}
+				return ""
+			}
+		default:
+			// Skip unknown fields
+			continue
+		}
+
+		dataInterface = acl.FilterArrayByField(dataInterface, fieldName, fieldFilters, getFieldValue)
+	}
+
+	// Convert back to []*model.LoanCashFlow
+	var filteredLoanCashFlows []*model.LoanCashFlow
+	for _, item := range dataInterface {
+		if lcf, ok := item.(*model.LoanCashFlow); ok {
+			filteredLoanCashFlows = append(filteredLoanCashFlows, lcf)
+		}
+	}
+
+	return filteredLoanCashFlows, nil
+}
+
+// GetByLoanCodes retrieves loan cash flows for multiple loan codes or all loans if empty array
+func (s *LoanCashFlowService) GetByLoanCodes(ctx context.Context, loanCodes []*string, columnPermissions *acl.ColumnPermissions) ([]*model.LoanCashFlow, error) {
+	// If loanCodes array is empty or nil, get all loans
+	if len(loanCodes) == 0 {
+		return s.GetAllLoans(ctx, columnPermissions)
+	}
+
+	var allLoanCashFlows []*model.LoanCashFlow
+
+	// Query for each loan code individually
+	for _, loanCodePtr := range loanCodes {
+		if loanCodePtr == nil {
+			continue // Skip nil loan codes
+		}
+
+		loanCode := *loanCodePtr
+		loanCashFlows, err := s.GetByLoanCode(ctx, loanCode, columnPermissions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get loan cash flows for loan code %s: %w", loanCode, err)
+		}
+
+		allLoanCashFlows = append(allLoanCashFlows, loanCashFlows...)
+	}
+
+	return allLoanCashFlows, nil
+}
+
+// GetByLoanCodesWithFieldFilters retrieves loan cash flows for multiple loan codes and applies field-level filtering
+func (s *LoanCashFlowService) GetByLoanCodesWithFieldFilters(ctx context.Context, loanCodes []*string, columnPermissions *acl.ColumnPermissions, fieldFilters map[string]acl.FieldFilter) ([]*model.LoanCashFlow, error) {
+	// If loanCodes array is empty or nil, get all loans with field filters
+	if len(loanCodes) == 0 {
+		return s.GetAllLoansWithFieldFilters(ctx, columnPermissions, fieldFilters)
+	}
+
+	// First get the data with column filtering
+	loanCashFlows, err := s.GetByLoanCodes(ctx, loanCodes, columnPermissions)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply field filters
+	if len(fieldFilters) == 0 {
+		return loanCashFlows, nil
+	}
+
+	// Convert to []any for filtering
+	var dataInterface []any
+	for _, loanCashFlow := range loanCashFlows {
+		dataInterface = append(dataInterface, loanCashFlow)
+	}
+
+	// Apply each field filter
+	for fieldName := range fieldFilters {
+		var getFieldValue func(any) string
+
+		switch fieldName {
+		case "loancode":
+			getFieldValue = func(item any) string {
+				if lcf, ok := item.(*model.LoanCashFlow); ok {
+					return lcf.LoanCode
+				}
+				return ""
+			}
+		default:
+			// Skip unknown fields
+			continue
+		}
+
+		dataInterface = acl.FilterArrayByField(dataInterface, fieldName, fieldFilters, getFieldValue)
+	}
+
+	// Convert back to []*model.LoanCashFlow
+	var filteredLoanCashFlows []*model.LoanCashFlow
+	for _, item := range dataInterface {
+		if lcf, ok := item.(*model.LoanCashFlow); ok {
+			filteredLoanCashFlows = append(filteredLoanCashFlows, lcf)
+		}
+	}
+
+	return filteredLoanCashFlows, nil
+}

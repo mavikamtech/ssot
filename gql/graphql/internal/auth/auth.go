@@ -16,7 +16,6 @@ func ValidateToken(tokenString string) (*User, error) {
 		// Create user from local claims
 		user := &User{
 			ID:       localClaims.UserID,
-			Email:    localClaims.Email,
 			Role:     localClaims.Role,
 			Scope:    "ssot:gql:loancashflow:read", // Example scope for local tokens
 			ClientID: "use-local-token",            // Local tokens do not have client_id
