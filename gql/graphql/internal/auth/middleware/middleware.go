@@ -26,6 +26,14 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		// Log all headers for debugging
+		log.Println("Request headers:")
+		for key, values := range r.Header {
+			for _, value := range values {
+				log.Printf("  %s: %s", key, value)
+			}
+		}
+
 		// Check for x-amzn-oidc-data header first
 		if user, err := providers.ValidateOIDCAuth(r); err == nil {
 			// Convert providers.User to auth.User
