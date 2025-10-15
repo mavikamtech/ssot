@@ -61,25 +61,48 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Check if the header starts with "Bearer "
-		if !strings.HasPrefix(authHeader, "Bearer ") {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"errors":[{"message":"Invalid authorization header format"}]}`))
-			return
+		var tokenString string
+
+		// Check if the header starts with "Bearer " and extract token
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+		} else {
+			// If no Bearer prefix, use the raw value as token
+			tokenString = authHeader
 		}
 
-		// Extract the token
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		// Try to validate as JWT token first
 		jwtClaims, err := auth.ValidateToken(tokenString)
 		if err != nil {
+			// If JWT validation fails and no Bearer prefix, try as OIDC data
+			if !strings.HasPrefix(authHeader, "Bearer ") {
+				// Set the authorization header value as x-amzn-oidc-data header
+				r.Header.Set("x-amzn-oidc-data", authHeader)
+				// Try OIDC validation again
+				if user, oidcErr := providers.ValidateOIDCAuth(r); oidcErr == nil {
+					// Convert providers.User to auth.User
+					authUser := &auth.User{
+						ID:       user.ID,
+						Email:    user.Email,
+						Role:     user.Role,
+						Scope:    user.Scope,
+						ClientID: user.ClientID,
+					}
+					// OIDC authentication successful, add user to context and continue
+					ctx := context.WithValue(r.Context(), auth.UserContextKey, authUser)
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+			}
+
+			// Both JWT and OIDC validation failed
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"errors":[{"message":"Invalid token"}]}`))
 			return
 		}
 
-		// Add user to context
+		// JWT validation successful, add user to context
 		ctx := context.WithValue(r.Context(), auth.UserContextKey, jwtClaims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
