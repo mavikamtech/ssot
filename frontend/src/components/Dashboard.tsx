@@ -168,7 +168,7 @@ export default function Dashboard() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `loan_cashflow_data_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `loan_cashflow_data_${new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5)}_UTC.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
