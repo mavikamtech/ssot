@@ -87,6 +87,94 @@ export default function Dashboard() {
     }
   };
 
+  const downloadCSV = () => {
+    if (!data?.loanCashFlow?.byLoanCode || data.loanCashFlow.byLoanCode.length === 0) {
+      alert('No data available to download');
+      return;
+    }
+
+    // Define CSV headers in the desired order
+    const headers = [
+      'Property Code',
+      'Property Name',
+      'Loan Code',
+      'Loan Description',
+      'Commitment',
+      'Status',
+      'Accrual Start Date',
+      'Accrual End Date',
+      'Post Date',
+      'GL Period Date',
+      'S Balance',
+      'Interest',
+      'Balance',
+      'E Balance',
+      'Draw Actual Principal',
+      'Capitalized Interest',
+      'Capitalized Other Fees',
+      'Capitalized Loan Admin Fee',
+      'Capitalized Fee',
+      'Leverage Balance',
+      'Leverage Activity',
+      'Leverage Interest',
+      'Max HMY'
+    ];
+
+    // Sort data the same way as displayed in the table
+    const sortedData = data.loanCashFlow.byLoanCode
+      .slice()
+      .sort((a: LoanCashFlowData, b: LoanCashFlowData) => {
+        if (a.loanCode !== b.loanCode) {
+          return a.loanCode.localeCompare(b.loanCode);
+        }
+        if (a.postDate !== b.postDate) {
+          return a.postDate.localeCompare(b.postDate);
+        }
+        return (a.maxHmy || 0) - (b.maxHmy || 0);
+      });
+
+    // Convert data to CSV format
+    const csvContent = [
+      headers.join(','),
+      ...sortedData.map((item: LoanCashFlowData) => [
+        `"${item.propertyCode || ''}"`,
+        `"${item.propertyName || ''}"`,
+        `"${item.loanCode || ''}"`,
+        `"${item.loanDesc || ''}"`,
+        item.commitment || '',
+        `"${item.status || ''}"`,
+        `"${item.accrualStartDate || ''}"`,
+        `"${item.accrualEndDate || ''}"`,
+        `"${item.postDate || ''}"`,
+        `"${item.glPeriodDate || ''}"`,
+        item.sBalance || '',
+        item.interest || '',
+        item.balance || '',
+        item.eBalance || '',
+        item.drawActualPrincipal || '',
+        item.capitalizedInterest || '',
+        item.capitalizedOtherFees || '',
+        item.capitalizedLoanAdministrationFee || '',
+        item.capitalizedFee || '',
+        item.leverageBalance || '',
+        item.leverageActivity || '',
+        item.leverageInterest || '',
+        item.maxHmy || ''
+      ].join(','))
+    ].join('\n');
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `loan_cashflow_data_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div>
       <header className="header">
@@ -134,6 +222,16 @@ export default function Dashboard() {
           >
             {loading ? 'Loading...' : queryTriggered ? 'Refresh Data' : 'Fetch Loan Cash Flow Data'}
           </button>
+          
+          {data && data.loanCashFlow && data.loanCashFlow.byLoanCode && data.loanCashFlow.byLoanCode.length > 0 && (
+            <button 
+              onClick={downloadCSV}
+              className="btn btn-secondary"
+              style={{ marginLeft: '1rem' }}
+            >
+              Download CSV
+            </button>
+          )}
         </div>
 
         {error && (
@@ -167,29 +265,29 @@ export default function Dashboard() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Loan Code</th>
-                      <th>Max HMY</th>
-                      <th>Post Date</th>
-                      <th>Property Name</th>
                       <th>Property Code</th>
-                      <th>Status</th>
-                      <th>Balance</th>
-                      <th>Interest</th>
+                      <th>Property Name</th>
+                      <th>Loan Code</th>
+                      <th>Loan Description</th>
                       <th>Commitment</th>
+                      <th>Status</th>
                       <th>Accrual Start Date</th>
                       <th>Accrual End Date</th>
-                      <th>Capitalized Fee</th>
-                      <th>Capitalized Interest</th>
-                      <th>Capitalized Loan Admin Fee</th>
-                      <th>Capitalized Other Fees</th>
-                      <th>Draw Actual Principal</th>
-                      <th>E Balance</th>
+                      <th>Post Date</th>
                       <th>GL Period Date</th>
-                      <th>Leverage Activity</th>
-                      <th>Leverage Balance</th>
-                      <th>Leverage Interest</th>
-                      <th>Loan Description</th>
                       <th>S Balance</th>
+                      <th>Interest</th>
+                      <th>Balance</th>
+                      <th>E Balance</th>
+                      <th>Draw Actual Principal</th>
+                      <th>Capitalized Interest</th>
+                      <th>Capitalized Other Fees</th>
+                      <th>Capitalized Loan Admin Fee</th>
+                      <th>Capitalized Fee</th>
+                      <th>Leverage Balance</th>
+                      <th>Leverage Activity</th>
+                      <th>Leverage Interest</th>
+                      <th>Max HMY</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -209,29 +307,29 @@ export default function Dashboard() {
                       })
                       .map((item: LoanCashFlowData, index: number) => (
                       <tr key={index}>
-                        <td>{item.loanCode}</td>
-                        <td>{item.maxHmy || 'N/A'}</td>
-                        <td>{item.postDate}</td>
-                        <td>{item.propertyName}</td>
                         <td>{item.propertyCode}</td>
-                        <td>{item.status}</td>
-                        <td>${item.balance?.toLocaleString() || 'N/A'}</td>
-                        <td>${item.interest?.toLocaleString() || 'N/A'}</td>
+                        <td>{item.propertyName}</td>
+                        <td>{item.loanCode}</td>
+                        <td>{item.loanDesc}</td>
                         <td>${item.commitment?.toLocaleString() || 'N/A'}</td>
+                        <td>{item.status}</td>
                         <td>{item.accrualStartDate}</td>
                         <td>{item.accrualEndDate}</td>
-                        <td>${item.capitalizedFee?.toLocaleString() || 'N/A'}</td>
-                        <td>${item.capitalizedInterest?.toLocaleString() || 'N/A'}</td>
-                        <td>${item.capitalizedLoanAdministrationFee?.toLocaleString() || 'N/A'}</td>
-                        <td>${item.capitalizedOtherFees?.toLocaleString() || 'N/A'}</td>
-                        <td>${item.drawActualPrincipal?.toLocaleString() || 'N/A'}</td>
-                        <td>${item.eBalance?.toLocaleString() || 'N/A'}</td>
+                        <td>{item.postDate}</td>
                         <td>{item.glPeriodDate}</td>
-                        <td>{item.leverageActivity?.toLocaleString() || 'N/A'}</td>
-                        <td>${item.leverageBalance?.toLocaleString() || 'N/A'}</td>
-                        <td>${item.leverageInterest?.toLocaleString() || 'N/A'}</td>
-                        <td>{item.loanDesc}</td>
                         <td>${item.sBalance?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.interest?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.balance?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.eBalance?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.drawActualPrincipal?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.capitalizedInterest?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.capitalizedOtherFees?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.capitalizedLoanAdministrationFee?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.capitalizedFee?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.leverageBalance?.toLocaleString() || 'N/A'}</td>
+                        <td>{item.leverageActivity?.toLocaleString() || 'N/A'}</td>
+                        <td>${item.leverageInterest?.toLocaleString() || 'N/A'}</td>
+                        <td>{item.maxHmy || 'N/A'}</td>
                       </tr>
                     ))}
                   </tbody>
