@@ -42,6 +42,8 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NODE_ENV=production
+ENV NEXT_PUBLIC_AZURE_AD_TENANT_ID="0beed8a0-2f9c-4bff-a92a-1e445f1c15bd"
+ENV NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI="https://app-prod.mavik-ssot.com/"
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
