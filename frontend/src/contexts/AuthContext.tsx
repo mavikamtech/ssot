@@ -25,6 +25,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = () => {
     setIsLoading(true);
+    
+    // Skip OIDC authentication in development mode
+    if (process.env.NODE_ENV === 'development') {
+      // Provide a mock user for local development
+      const mockUser: User = {
+        id: 'dev-user-123',
+        email: 'dev@localhost.com',
+        role: 'developer',
+        clientId: 'local-dev-client'
+      };
+      setUser(mockUser);
+      setOidcToken('mock-token-for-development');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       fetch('/api/auth/check', {
         method: 'GET',
@@ -56,10 +72,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    setUser(null);
-    setOidcToken(null);
-    // In production with ALB OIDC, logout would redirect to OIDC provider logout endpoint
-    // For now, just clear local state
+    if (process.env.NODE_ENV !== 'development') {
+      const tenant = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID || 'common';
+      const postLogoutRedirectUri = process.env.NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI;
+
+      if (postLogoutRedirectUri) {
+        const logoutUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+        window.location.href = logoutUrl;
+      } else {
+        console.error('Post-logout redirect URI is not configured. Please set NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI.');
+      }
+    } else {
+      // For local development, just clear local state
+      setUser(null);
+      setOidcToken(null);
+    }
   };
 
   return (
