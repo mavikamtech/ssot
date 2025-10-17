@@ -19,7 +19,7 @@ export function ApolloWrapper({ children }: { children: React.ReactNode }) {
 
     if (oidcToken) {
       authHeaders['x-amzn-oidc-data'] = oidcToken;
-      authHeaders['Authorization'] = oidcToken;
+      authHeaders['Authorization'] = oidcToken; // This is by design for the backend to read
     }
 
     return {
