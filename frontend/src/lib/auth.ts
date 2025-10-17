@@ -14,6 +14,33 @@ export interface Claims {
   [key: string]: any;
 }
 
+function decodeBase64Url(base64Url: string): string {
+  // Replace non-url compatible chars with base64 standard chars
+  let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+
+  // Pad out with standard base64 required padding characters
+  const pad = base64.length % 4;
+  if (pad) {
+    if (pad === 1) {
+      throw new Error('InvalidLengthError: Input base64url string is the wrong length to determine padding');
+    }
+    base64 += new Array(5 - pad).join('=');
+  }
+
+  if (typeof Buffer !== 'undefined') {
+    // Node.js environment
+    return Buffer.from(base64, 'base64').toString('utf8');
+  } else {
+    // Browser environment
+    return decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+  }
+}
+
 /**
  * Validates OIDC authentication from x-amzn-oidc-data header
  * Based on the Go ValidateOIDCAuth function
@@ -32,8 +59,7 @@ export function validateOIDCAuth(oidcData: string): User {
   // Decode the payload (second part) manually
   let payload: string;
   try {
-    // Use built-in atob for base64 decoding
-    payload = atob(parts[1]);
+    payload = decodeBase64Url(parts[1]);
   } catch (err) {
     throw new Error(`Failed to decode payload: ${(err as Error).message}`);
   }
