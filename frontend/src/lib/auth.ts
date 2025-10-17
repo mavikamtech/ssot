@@ -105,6 +105,11 @@ function validateMicrosoftToken(claims: Claims): User {
     throw new Error('Token has expired');
   }
 
+  // Ensure sub claim exists
+  if (!claims.sub) {
+    throw new Error('Subject (sub) not found in token');
+  }
+
   // Create user with the required scope
   return {
     id: `oidc-${claims.sub}`,
@@ -126,6 +131,11 @@ function createUserFromClaims(claims: Claims): User {
   // Validate token expiration
   if (claims.exp && Date.now() / 1000 > claims.exp) {
     throw new Error('OIDC token has expired');
+  }
+
+  // Ensure sub claim exists
+  if (!claims.sub) {
+    throw new Error('Subject (sub) not found in token');
   }
 
   // Create user with the required scope
