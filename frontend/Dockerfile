@@ -3,6 +3,10 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Accept build argument for GraphQL endpoint
+ARG NEXT_PUBLIC_GQL_ENDPOINT
+ENV NEXT_PUBLIC_GQL_ENDPOINT=$NEXT_PUBLIC_GQL_ENDPOINT
+
 # Copy package files
 COPY package*.json ./
 

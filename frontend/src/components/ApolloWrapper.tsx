@@ -5,7 +5,7 @@ import { setContext } from '@apollo/client/link/context';
 import { useAuth } from '../contexts/AuthContext';
 
 const httpLink = createHttpLink({
-  uri: 'https://gql-prod.mavik-ssot.com/query', // Use production API
+  uri: process.env.NEXT_PUBLIC_GQL_ENDPOINT || 'https://gql-prod.mavik-ssot.com/query', // Use env or fallback to production API
 });
 
 export function ApolloWrapper({ children }: { children: React.ReactNode }) {
