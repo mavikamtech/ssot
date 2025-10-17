@@ -35,7 +35,7 @@ export function validateOIDCAuth(oidcData: string): User {
     // Use built-in atob for base64 decoding
     payload = atob(parts[1]);
   } catch (err) {
-    throw new Error(`Failed to decode payload: ${err}`);
+    throw new Error(`Failed to decode payload: ${(err as Error).message}`);
   }
 
   // Parse the payload JSON
