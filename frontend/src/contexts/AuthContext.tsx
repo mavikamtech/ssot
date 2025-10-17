@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, validateOIDCAuth } from '../lib/auth';
+import { User } from '../lib/auth';
 
 interface AuthContextType {
   user: User | null;
