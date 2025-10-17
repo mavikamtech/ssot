@@ -12,6 +12,10 @@ on:
       - ".github/workflows/fargate-deployment.yml"
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: ssot-gql
