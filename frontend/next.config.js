@@ -2,6 +2,11 @@
 const nextConfig = {
   output: 'standalone',
   trailingSlash: true,
+  experimental: {
+    logging: {
+      level: 'verbose', 
+    },
+  },
   async headers() {
     return [
       {
