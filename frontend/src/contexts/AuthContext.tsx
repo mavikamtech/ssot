@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '../lib/auth';
+import { initiateLogout, clearAuthState } from '../lib/logout';
 
 interface AuthContextType {
   user: User | null;
@@ -71,13 +72,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // This method is kept for compatibility but should not be used
   };
 
-  const logout = () => {
-    if (process.env.NODE_ENV !== 'development') {
-      // In production, redirect to the ALB's logout endpoint.
-      // The ALB will then clear its session cookie and redirect to the OIDC provider's logout URL.
-      window.location.href = '/oauth2/logout';
-    } else {
-      // For local development, just clear local state
+  const logout = async () => {
+    try {
+      // Clear client-side auth state first
+      clearAuthState();
+      setUser(null);
+      setOidcToken(null);
+      
+      // Then initiate server-side logout
+      await initiateLogout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, clear local state
       setUser(null);
       setOidcToken(null);
     }
