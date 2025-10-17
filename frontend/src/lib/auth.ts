@@ -43,7 +43,7 @@ export function validateOIDCAuth(oidcData: string): User {
   try {
     claims = JSON.parse(payload);
   } catch (err) {
-    throw new Error(`Failed to parse claims: ${err}`);
+    throw new Error(`Failed to parse claims: ${(err as Error).message}`);
   }
 
   // Check issuer to determine if this is a Microsoft token
