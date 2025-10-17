@@ -20,6 +20,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check if user is already authenticated
+    console.log('Verifying environment variables:');
+    console.log('Tenant ID:', process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID);
+    console.log('Post Logout Redirect URI:', process.env.NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI);
     checkAuth();
   }, []);
 
