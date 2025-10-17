@@ -1,0 +1,123 @@
+name: Frontend Production Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-production-deployment.yml"
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: 167067248318.dkr.ecr.us-east-1.amazonaws.com/ssot-frontend-prod
+  ECS_SERVICE: arn:aws:ecs:us-east-1:167067248318:service/ssot-cluster/ssot-frontend-prod
+  ECS_CLUSTER: ssot-cluster
+  ECS_SERVICE_NAME: ssot-frontend-prod
+  CONTAINER_NAME: ssot-frontend-prod
+
+jobs:
+  deploy:
+    name: Deploy Frontend to Production
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::167067248318:role/GithubActionServiceRole
+          role-session-name: gh-oidc-ssot-frontend-prod
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        working-directory: ./frontend
+        run: |
+          # Build a docker container and push it to ECR
+          IMAGE_TAG=${GITHUB_SHA:0:7}-$(date +%s)
+          echo "Building image with tag: $IMAGE_TAG"
+          
+          docker build --build-arg NEXT_PUBLIC_GQL_ENDPOINT=https://gql-prod.mavik-ssot.com/query -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REPOSITORY:$IMAGE_TAG
+          
+          # Also tag as latest
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REPOSITORY:latest
+          docker push $ECR_REPOSITORY:latest
+          
+          echo "image=$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "IMAGE_URI=$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Download current task definition
+        id: download-task-def
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_SERVICE_NAME }} \
+            --query taskDefinition > task-definition.json
+          
+          # Remove read-only fields
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' \
+            task-definition.json > cleaned-task-definition.json
+          
+          mv cleaned-task-definition.json task-definition.json
+          
+          # Update the image
+          jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' task-definition.json > temp.json && mv temp.json task-definition.json
+          
+          # Add or update environment variables
+          jq '.containerDefinitions[0].environment = (.containerDefinitions[0].environment // []) + [{"name": "ENV", "value": "prod"}, {"name": "NEXT_PUBLIC_GQL_ENDPOINT", "value": "https://gql-prod.mavik-ssot.com/query"}]' task-definition.json > temp.json && mv temp.json task-definition.json
+
+      - name: Register new task definition
+        id: register-task-def
+        run: |
+          TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://task-definition.json --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "task-definition-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE_NAME }} \
+            --task-definition ${{ steps.register-task-def.outputs.task-definition-arn }}
+
+      - name: Wait for service stability
+        run: |
+          aws ecs wait services-stable --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE_NAME }}
+
+      - name: Verify deployment
+        run: |
+          echo "🎉 Frontend App prod deployment completed successfully!"
+          echo "Image deployed: ${{ steps.build-image.outputs.image }}"
+          echo "ECS Service: ${{ env.ECS_SERVICE }}"
+          
+          # Wait a bit for the service to stabilize
+          sleep 30
+          
+          # Get the service status
+          aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE_NAME }} \
+            --query 'services[0].{Status:status,RunningCount:runningCount,DesiredCount:desiredCount}' \
+            --output table
+
+      - name: Send deployment notification
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          if [ "$STATUS" = "success" ]; then
+            echo "✅ Frontend App production deployment succeeded"
+            echo "🚀 New version is now live: ${{ steps.build-image.outputs.image }}"
+          else
+            echo "❌ Frontend App production deployment failed"
+            echo "🔍 Check the logs above for details"
+          fi
