@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 export default function Home() {
   const { user, isLoading } = useAuth();
 
-  // Add a simple health indicator for automated checks
+  // Add logging and health indicator
   useEffect(() => {
     // Set a data attribute that can be checked by health monitors
     document.documentElement.setAttribute('data-health-status', 'ready');
@@ -16,7 +16,7 @@ export default function Home() {
     return () => {
       document.documentElement.removeAttribute('data-health-status');
     };
-  }, []);
+  }, [user, isLoading]);
 
   if (isLoading) {
     return (
