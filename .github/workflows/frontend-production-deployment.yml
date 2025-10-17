@@ -55,7 +55,7 @@ jobs:
           docker build \
             --build-arg NEXT_PUBLIC_GQL_ENDPOINT=https://gql-prod.mavik-ssot.com/query \
             --build-arg NEXT_PUBLIC_AZURE_AD_TENANT_ID=0beed8a0-2f9c-4bff-a92a-1e445f1c15bd \
-            --build-arg NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI=https://app-prod.mavik-ssot.com/logout \
+            --build-arg NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI=https://app-prod.mavik-ssot.com/api/auth/logout \
             -t $ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REPOSITORY:$IMAGE_TAG
           
@@ -87,7 +87,7 @@ jobs:
             {"name": "ENV", "value": "prod"}, 
             {"name": "NEXT_PUBLIC_GQL_ENDPOINT", "value": "https://gql-prod.mavik-ssot.com/query"},
             {"name": "NEXT_PUBLIC_AZURE_AD_TENANT_ID", "value": "0beed8a0-2f9c-4bff-a92a-1e445f1c15bd"},
-            {"name": "NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI", "value": "https://app-prod.mavik-ssot.com/logout"}
+            {"name": "NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI", "value": "https://app-prod.mavik-ssot.com/api/auth/logout"}
           ]' task-definition.json > temp.json && mv temp.json task-definition.json
 
       - name: Register new task definition
