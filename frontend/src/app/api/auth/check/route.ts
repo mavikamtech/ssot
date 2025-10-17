@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { 
           authenticated: false, 
-          message: `OIDC token validation failed: ${validationError}` 
+          message: `OIDC token validation failed: ${validationError instanceof Error ? validationError.message : String(validationError)}` 
         },
         { status: 401 }
       );
