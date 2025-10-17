@@ -5,10 +5,26 @@ import { NextRequest, NextResponse } from 'next/server';
  * Handles logout by clearing ALB authentication cookies and redirecting to ALB logout endpoint
  */
 export async function POST(request: NextRequest) {
+  const requestId = crypto.randomUUID();
+  const timestamp = new Date().toISOString();
+  
+  console.log(`[LOGOUT] ${timestamp} - Request ID: ${requestId} - Logout flow initiated`, {
+    method: 'POST',
+    userAgent: request.headers.get('user-agent'),
+    ip: request.ip || request.headers.get('x-forwarded-for') || 'unknown',
+    referer: request.headers.get('referer')
+  });
+
   try {
     // Get Azure AD configuration from environment variables
     const tenant = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID || 'common';
     const postLogoutRedirectUri = process.env.NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI;
+    
+    console.log(`[LOGOUT] ${requestId} - Configuration loaded`, {
+      tenant: tenant,
+      hasPostLogoutRedirect: !!postLogoutRedirectUri,
+      postLogoutRedirectUri: postLogoutRedirectUri || 'not_configured'
+    });
     
     // Build Azure AD logout URL using URLSearchParams for proper encoding
     const baseLogoutUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout`;
@@ -23,6 +39,11 @@ export async function POST(request: NextRequest) {
       logoutUrl = baseLogoutUrl;
     }
     
+    console.log(`[LOGOUT] ${requestId} - Azure AD logout URL constructed`, {
+      logoutUrl: logoutUrl,
+      baseUrl: baseLogoutUrl
+    });
+    
     // Create response that will redirect to Azure AD logout endpoint
     const response = NextResponse.redirect(logoutUrl);
     
@@ -34,6 +55,11 @@ export async function POST(request: NextRequest) {
       'AWSELBAuthSessionCookie-2',
       'AWSELBAuthSessionCookie-3',
     ];
+
+    console.log(`[LOGOUT] ${requestId} - Starting ALB cookie invalidation`, {
+      cookieNames: cookieNames,
+      cookieCount: cookieNames.length
+    });
 
     // Set expiration time to -1 (past date) for all authentication cookies
     // This follows AWS ALB logout requirements - must set both expires and maxAge to -1
@@ -48,11 +74,33 @@ export async function POST(request: NextRequest) {
       });
     });
 
+    console.log(`[LOGOUT] ${requestId} - ALB cookies invalidated successfully`, {
+      clearedCookies: cookieNames,
+      isProduction: process.env.NODE_ENV === 'production',
+      secureFlag: process.env.NODE_ENV === 'production'
+    });
+
+    console.log(`[LOGOUT] ${requestId} - Logout flow completed successfully`, {
+      redirectTo: logoutUrl,
+      timestamp: new Date().toISOString(),
+      totalCookiesCleared: cookieNames.length
+    });
+
     return response;
   } catch (error) {
-    console.error('Logout error:', error);
+    console.error(`[LOGOUT] ${requestId} - Logout error occurred`, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+      requestId: requestId
+    });
+    
     return NextResponse.json(
-      { error: 'Logout failed' },
+      { 
+        error: 'Logout failed',
+        requestId: requestId,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
@@ -63,6 +111,13 @@ export async function POST(request: NextRequest) {
  * Alternative endpoint for GET requests (redirects to POST)
  */
 export async function GET(request: NextRequest) {
+  const requestId = crypto.randomUUID();
+  console.log(`[LOGOUT] ${new Date().toISOString()} - Request ID: ${requestId} - GET logout request received, delegating to POST handler`, {
+    method: 'GET',
+    userAgent: request.headers.get('user-agent'),
+    ip: request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+  });
+  
   // For GET requests, we'll also handle logout directly
   return POST(request);
 }
