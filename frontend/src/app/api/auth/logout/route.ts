@@ -6,8 +6,21 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    // Create response that will redirect to ALB logout endpoint
-    const response = NextResponse.redirect(new URL('/oauth2/logout', request.url));
+    // Get Azure AD configuration from environment variables
+    const tenant = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID || 'common';
+    const postLogoutRedirectUri = process.env.NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI;
+    
+    // Build Azure AD logout URL
+    let logoutUrl: string;
+    if (postLogoutRedirectUri) {
+      logoutUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+    } else {
+      // Fallback to basic Azure AD logout without redirect
+      logoutUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout`;
+    }
+    
+    // Create response that will redirect to Azure AD logout endpoint
+    const response = NextResponse.redirect(logoutUrl);
     
     // The ALB uses sharded cookies (up to 4 shards for 16K total size)
     // We need to clear all potential authentication cookie shards

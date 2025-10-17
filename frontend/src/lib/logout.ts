@@ -5,7 +5,7 @@
 
 /**
  * Initiates logout process by clearing ALB authentication cookies
- * and redirecting to the ALB logout endpoint
+ * and redirecting to the Azure AD logout endpoint
  */
 export async function initiateLogout(): Promise<void> {
   if (typeof window === 'undefined') {
@@ -26,16 +26,18 @@ export async function initiateLogout(): Promise<void> {
     });
 
     if (response.redirected) {
-      // Follow the redirect to ALB logout endpoint
+      // Follow the redirect to Azure AD logout endpoint
       window.location.href = response.url;
     } else {
-      // Fallback: redirect directly to ALB logout
-      window.location.href = '/oauth2/logout';
+      // Fallback: redirect directly to Azure AD logout
+      const azureLogoutUrl = getAzureADLogoutURL();
+      window.location.href = azureLogoutUrl;
     }
   } catch (error) {
     console.error('Error during logout:', error);
-    // Fallback: redirect directly to ALB logout
-    window.location.href = '/oauth2/logout';
+    // Fallback: redirect directly to Azure AD logout
+    const azureLogoutUrl = getAzureADLogoutURL();
+    window.location.href = azureLogoutUrl;
   }
 }
 
@@ -64,7 +66,26 @@ export function isALBAuthRequired(): boolean {
 }
 
 /**
- * Gets the ALB logout URL based on environment
+ * Gets the Azure AD logout URL based on environment configuration
+ */
+export function getAzureADLogoutURL(): string {
+  if (process.env.NODE_ENV === 'development') {
+    return '/logout'; // Local logout page
+  }
+
+  const tenant = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID || 'common';
+  const postLogoutRedirectUri = process.env.NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI;
+
+  if (postLogoutRedirectUri) {
+    return `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+  }
+
+  // Fallback to basic Azure AD logout without redirect
+  return `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout`;
+}
+
+/**
+ * Gets the ALB logout URL based on environment (deprecated - use getAzureADLogoutURL)
  */
 export function getALBLogoutURL(): string {
   if (isALBAuthRequired()) {

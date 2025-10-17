@@ -79,8 +79,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setOidcToken(null);
       
-      // Then initiate server-side logout
-      await initiateLogout();
+      if (process.env.NODE_ENV !== 'development') {
+        const tenant = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID || 'common';
+        const postLogoutRedirectUri = process.env.NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI;
+
+        if (postLogoutRedirectUri) {
+          const logoutUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+          window.location.href = logoutUrl;
+        } else {
+          console.error('Post-logout redirect URI is not configured. Please set NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI.');
+          // Fallback to API logout
+          await initiateLogout();
+        }
+      } else {
+        // For local development, just clear local state
+        setUser(null);
+        setOidcToken(null);
+      }
     } catch (error) {
       console.error('Logout failed:', error);
       // Even if logout fails, clear local state
