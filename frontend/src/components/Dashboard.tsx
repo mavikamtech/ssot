@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { useLazyQuery, gql } from '@apollo/client';
 import { useAuth } from '../contexts/AuthContext';
 
 const LOAN_CASHFLOW_QUERY = gql`
@@ -85,27 +85,19 @@ const sanitizeCSVValue = (value: string | number | null | undefined): string => 
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const [queryTriggered, setQueryTriggered] = useState(false);
   const [endDate, setEndDate] = useState("");
   
-  const { data, loading, error, refetch } = useQuery(LOAN_CASHFLOW_QUERY, {
-    variables: {
-      loanCode: [],
-      endDate: ""
-    },
-    skip: !queryTriggered,
-    notifyOnNetworkStatusChange: true
+  const [fetchData, { data, loading, error, called }] = useLazyQuery(LOAN_CASHFLOW_QUERY, {
+    notifyOnNetworkStatusChange: true,
   });
 
-  const handleQueryClick = async () => {
-    setQueryTriggered(true);
-    
-    if (queryTriggered) {
-      await refetch({
+  const handleQueryClick = () => {
+    fetchData({
+      variables: {
         loanCode: [],
-        endDate: endDate
-      });
-    }
+        endDate: endDate,
+      },
+    });
   };
 
   const downloadCSV = () => {
@@ -241,7 +233,7 @@ export default function Dashboard() {
             className="btn"
             disabled={loading}
           >
-            {loading ? 'Loading...' : queryTriggered ? 'Refresh Data' : 'Fetch Loan Cash Flow Data'}
+            {loading ? 'Loading...' : called ? 'Refresh Data' : 'Fetch Loan Cash Flow Data'}
           </button>
           
           {data && data.loanCashFlow && data.loanCashFlow.byLoanCode && data.loanCashFlow.byLoanCode.length > 0 && (
