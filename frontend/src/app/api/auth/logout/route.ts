@@ -10,13 +10,17 @@ export async function POST(request: NextRequest) {
     const tenant = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID || 'common';
     const postLogoutRedirectUri = process.env.NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI;
     
-    // Build Azure AD logout URL
+    // Build Azure AD logout URL using URLSearchParams for proper encoding
+    const baseLogoutUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout`;
     let logoutUrl: string;
+    
     if (postLogoutRedirectUri) {
-      logoutUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+      const url = new URL(baseLogoutUrl);
+      url.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+      logoutUrl = url.toString();
     } else {
       // Fallback to basic Azure AD logout without redirect
-      logoutUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/logout`;
+      logoutUrl = baseLogoutUrl;
     }
     
     // Create response that will redirect to Azure AD logout endpoint
@@ -32,11 +36,12 @@ export async function POST(request: NextRequest) {
     ];
 
     // Set expiration time to -1 (past date) for all authentication cookies
-    // This follows AWS ALB logout requirements
+    // This follows AWS ALB logout requirements - must set both expires and maxAge to -1
     cookieNames.forEach(cookieName => {
       response.cookies.set(cookieName, '', {
         path: '/',
-        expires: new Date(-1), // Set expiry to past date to delete cookie
+        expires: new Date(0), // Set expiry to epoch (past date) to delete cookie
+        maxAge: -1, // Explicitly set maxAge to -1 for ALB cookie invalidation
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
