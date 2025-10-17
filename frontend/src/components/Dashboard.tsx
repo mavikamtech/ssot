@@ -327,7 +327,7 @@ export default function Dashboard() {
                         return (a.maxHmy || 0) - (b.maxHmy || 0);
                       })
                       .map((item: LoanCashFlowData, index: number) => (
-                      <tr key={index}>
+                      <tr key={`${item.loanCode}-${item.postDate}-${item.maxHmy}`}>
                         <td>{item.propertyCode}</td>
                         <td>{item.propertyName}</td>
                         <td>{item.loanCode}</td>
