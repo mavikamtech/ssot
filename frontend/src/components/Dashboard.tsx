@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, gql } from '@apollo/client';
 import { useAuth } from '../contexts/AuthContext';
 
