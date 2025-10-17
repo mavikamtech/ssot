@@ -62,6 +62,27 @@ interface LoanCashFlowData {
   status: string;
 }
 
+// Function to sanitize CSV values to prevent formula injection
+const sanitizeCSVValue = (value: string | number | null | undefined): string => {
+  if (value === null || value === undefined) return '';
+  
+  const stringValue = String(value);
+  
+  // Check if the value starts with potentially dangerous characters
+  if (stringValue.match(/^[=+\-@]/)) {
+    // Prefix with single quote to prevent formula interpretation
+    return `"'${stringValue.replace(/"/g, '""')}"`;
+  }
+  
+  // For string values, wrap in quotes and escape existing quotes
+  if (typeof value === 'string') {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+  
+  // For numeric values, return as-is
+  return stringValue;
+};
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const [queryTriggered, setQueryTriggered] = useState(false);
@@ -137,16 +158,16 @@ export default function Dashboard() {
     const csvContent = [
       headers.join(','),
       ...sortedData.map((item: LoanCashFlowData) => [
-        `"${item.propertyCode || ''}"`,
-        `"${item.propertyName || ''}"`,
-        `"${item.loanCode || ''}"`,
-        `"${item.loanDesc || ''}"`,
+        sanitizeCSVValue(item.propertyCode),
+        sanitizeCSVValue(item.propertyName),
+        sanitizeCSVValue(item.loanCode),
+        sanitizeCSVValue(item.loanDesc),
         item.commitment || '',
-        `"${item.status || ''}"`,
-        `"${item.accrualStartDate || ''}"`,
-        `"${item.accrualEndDate || ''}"`,
-        `"${item.postDate || ''}"`,
-        `"${item.glPeriodDate || ''}"`,
+        sanitizeCSVValue(item.status),
+        sanitizeCSVValue(item.accrualStartDate),
+        sanitizeCSVValue(item.accrualEndDate),
+        sanitizeCSVValue(item.postDate),
+        sanitizeCSVValue(item.glPeriodDate),
         item.sBalance || '',
         item.interest || '',
         item.balance || '',
