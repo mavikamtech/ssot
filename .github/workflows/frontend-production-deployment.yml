@@ -52,11 +52,7 @@ jobs:
           IMAGE_TAG=${GITHUB_SHA:0:7}-$(date +%s)
           echo "Building image with tag: $IMAGE_TAG"
           
-          docker build \
-            --build-arg NEXT_PUBLIC_GQL_ENDPOINT=https://gql-prod.mavik-ssot.com/query \
-            --build-arg NEXT_PUBLIC_AZURE_AD_TENANT_ID=0beed8a0-2f9c-4bff-a92a-1e445f1c15bd \
-            --build-arg NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI=https://app-prod.mavik-ssot.com/ \
-            -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker build --build-arg NEXT_PUBLIC_GQL_ENDPOINT=https://gql-prod.mavik-ssot.com/query -t $ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REPOSITORY:$IMAGE_TAG
           
           # Also tag as latest
@@ -83,15 +79,7 @@ jobs:
           jq --arg image "${{ steps.build-image.outputs.image }}" '.containerDefinitions[0].image = $image' task-definition.json > temp.json && mv temp.json task-definition.json
           
           # Add or update environment variables
-          jq '
-            .containerDefinitions[0].environment |= (
-              . + [
-                {"name": "NEXT_PUBLIC_AZURE_AD_TENANT_ID", "value": "0beed8a0-2f9c-4bff-a92a-1e445f1c15bd"},
-                {"name": "NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI", "value": "https://app-prod.mavik-ssot.com/"},
-                {"name": "NEXT_PUBLIC_GQL_ENDPOINT", "value": "https://gql-prod.mavik-ssot.com/query"}
-              ] | unique_by(.name)
-            )
-          ' task-definition.json > temp.json && mv temp.json task-definition.json
+          jq '.containerDefinitions[0].environment = (.containerDefinitions[0].environment // []) + [{"name": "ENV", "value": "prod"}, {"name": "NEXT_PUBLIC_GQL_ENDPOINT", "value": "https://gql-prod.mavik-ssot.com/query"}]' task-definition.json > temp.json && mv temp.json task-definition.json
 
       - name: Register new task definition
         id: register-task-def
