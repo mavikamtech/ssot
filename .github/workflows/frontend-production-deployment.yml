@@ -1,4 +1,4 @@
-name: Frontend Production Deployment
+name: Deploy Frontend APP to AWS Fargate (Production)
 
 on:
   push:
