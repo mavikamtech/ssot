@@ -120,12 +120,33 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    let rafId: number;
+
     const handleResize = () => {
-      setWindowWidth(window.innerWidth);
+      // Cancel any pending timeout and animation frame
+      clearTimeout(timeoutId);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+
+      // Debounce the state update
+      timeoutId = setTimeout(() => {
+        rafId = requestAnimationFrame(() => {
+          setWindowWidth(window.innerWidth);
+        });
+      }, 150); // 150ms debounce delay
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
   }, []);
 
   const handleQueryClick = async () => {
