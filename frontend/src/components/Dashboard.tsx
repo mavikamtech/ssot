@@ -95,7 +95,11 @@ export default function Dashboard() {
   const [uploadMonthEnd, setUploadMonthEnd] = useState("");
   const [uploadVersionNote, setUploadVersionNote] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<any>(null);
+  interface UploadResult {
+    message: string;
+    data?: any; // Replace 'any' with a more specific type if you know the structure of 'data'
+  }
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   
   const [fetchData, { data, loading, error, called }] = useLazyQuery(LOAN_CASHFLOW_QUERY, {

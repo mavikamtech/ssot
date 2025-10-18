@@ -78,6 +78,22 @@ export async function POST(request: NextRequest) {
     let csvData: CSVUploadData[];
     try {
       csvData = parseCSV(fileContent);
+
+      // Validate that all loanCode and monthEnd values in CSV match the form parameters
+      const mismatchedRows = csvData.filter(
+        row =>
+          (row.loanCode && row.loanCode !== loanCode) ||
+          (row.monthEnd && row.monthEnd !== monthEnd)
+      );
+      if (mismatchedRows.length > 0) {
+        return NextResponse.json(
+          { 
+            error: 'CSV contains loanCode or monthEnd values that do not match the form parameters',
+            mismatchedRows: mismatchedRows.map((row, idx) => ({ row: idx + 1, loanCode: row.loanCode, monthEnd: row.monthEnd }))
+          },
+          { status: 400 }
+        );
+      }
       
       // Set the loan code, month end, and created by for all rows
       csvData = csvData.map(row => ({

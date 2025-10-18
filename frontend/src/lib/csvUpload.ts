@@ -111,7 +111,7 @@ export function createDynamoRecord(
   monthEndDate.setMonth(monthEndDate.getMonth() + 6);
   const ttlEpoch = Math.floor(monthEndDate.getTime() / 1000);
 
-  const pk = `LOAN#${data.loanCode}#ME#${data.monthEnd.replace(/\//g, '')}`;
+  const pk = `LOAN#${data.loanCode}#ME#${data.monthEnd.replace(/\u002F/g, '')}`;
   const sk = `TS#${ts}#FILE#${fileId}`;
 
   return {
@@ -147,7 +147,7 @@ export function createDynamoRecord(
     ttl_epoch_sec: { N: ttlEpoch.toString() },
     GSI1PK: { S: `USER#${createdBy}` },
     GSI1SK: { S: sk },
-    GSI2PK: { S: `ME#${data.monthEnd.replace(/\//g, '')}` },
+    GSI2PK: { S: `ME#${data.monthEnd.replace(/\u002F/g, '')}` },
     GSI2SK: { S: `LOAN#${data.loanCode}#TS#${ts}` }
   };
 }
