@@ -89,6 +89,15 @@ export default function Dashboard() {
   const { logAccess } = useAccessLogger();
   const [endDate, setEndDate] = useState("");
   
+  // CSV Upload states
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [uploadLoanCode, setUploadLoanCode] = useState("");
+  const [uploadMonthEnd, setUploadMonthEnd] = useState("");
+  const [uploadVersionNote, setUploadVersionNote] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<any>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  
   const [fetchData, { data, loading, error, called }] = useLazyQuery(LOAN_CASHFLOW_QUERY, {
     notifyOnNetworkStatusChange: true,
   });
@@ -108,6 +117,68 @@ export default function Dashboard() {
         endDate: endDate,
       },
     });
+  };
+
+  const handleCSVUpload = async () => {
+    if (!csvFile || !uploadLoanCode || !uploadMonthEnd) {
+      setUploadError('Please fill in all required fields and select a CSV file');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+    setUploadResult(null);
+
+    try {
+      // Log access event
+      await logAccess({
+        action: 'UPLOAD_CSV',
+        route: '/api/upload/csv',
+        method: 'POST',
+        description: `Uploading CSV for loan ${uploadLoanCode} - ${uploadMonthEnd}`
+      });
+
+      const formData = new FormData();
+      formData.append('file', csvFile);
+      formData.append('loanCode', uploadLoanCode);
+      formData.append('monthEnd', uploadMonthEnd);
+      formData.append('versionNote', uploadVersionNote);
+
+      const response = await fetch('/api/upload/csv', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+      setUploadResult(result);
+      
+      // Clear form on success
+      setCsvFile(null);
+      setUploadLoanCode('');
+      setUploadMonthEnd('');
+      setUploadVersionNote('');
+      
+      // Refresh data if we have the same loan loaded
+      if (data && called) {
+        fetchData({
+          variables: {
+            loanCode: [],
+            endDate: endDate,
+          },
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('CSV upload error:', error);
+      setUploadError(error.message);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const downloadCSV = async () => {
@@ -282,6 +353,174 @@ export default function Dashboard() {
                 }, null, 2)}
               </pre>
             </details>
+          </div>
+        )}
+
+        {/* CSV Upload Section - Only show when data is successfully loaded */}
+        {data && data.loanCashFlow && data.loanCashFlow.byLoanCode && data.loanCashFlow.byLoanCode.length > 0 && (
+          <div style={{ 
+            marginBottom: '2rem', 
+            padding: '1.5rem', 
+            background: '#f8f9fa', 
+            borderRadius: '8px',
+            border: '1px solid #e9ecef'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#495057' }}>
+              Upload CSV Data
+            </h3>
+            <p style={{ marginBottom: '1rem', fontSize: '0.9rem', color: '#6c757d' }}>
+              Upload a CSV file with loan cash flow data. Required columns: loancode, monthend, cashflowBasedonmonthend
+            </p>
+            <details style={{ marginBottom: '1rem' }}>
+              <summary style={{ cursor: 'pointer', fontSize: '0.9rem', color: '#007bff' }}>
+                View CSV Format Example
+              </summary>
+              <pre style={{ 
+                marginTop: '0.5rem', 
+                fontSize: '0.8rem', 
+                background: '#fff', 
+                padding: '0.5rem', 
+                border: '1px solid #dee2e6',
+                borderRadius: '4px',
+                color: '#495057'
+              }}>
+{`loancode,monthend,cashflowBasedonmonthend,versionnote
+VS1-0001,2024-12-31,150000.50,Q4 forecast
+VS1-0002,2024-12-31,275000.00,Updated projection`}
+              </pre>
+            </details>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  Loan Code *
+                </label>
+                <input
+                  type="text"
+                  value={uploadLoanCode}
+                  onChange={(e) => setUploadLoanCode(e.target.value)}
+                  placeholder="e.g., VS1-0001"
+                  style={{
+                    padding: '0.5rem',
+                    border: '1px solid #ced4da',
+                    borderRadius: '4px',
+                    width: '100%',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  Month End *
+                </label>
+                <input
+                  type="text"
+                  value={uploadMonthEnd}
+                  onChange={(e) => setUploadMonthEnd(e.target.value)}
+                  placeholder="e.g., 2024-12-31"
+                  style={{
+                    padding: '0.5rem',
+                    border: '1px solid #ced4da',
+                    borderRadius: '4px',
+                    width: '100%',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                Version Note (optional)
+              </label>
+              <input
+                type="text"
+                value={uploadVersionNote}
+                onChange={(e) => setUploadVersionNote(e.target.value)}
+                placeholder="e.g., Q4 forecast update"
+                style={{
+                  padding: '0.5rem',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  width: '100%',
+                  fontSize: '0.9rem'
+                }}
+              />
+            </div>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                CSV File *
+              </label>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                style={{
+                  padding: '0.5rem',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  width: '100%',
+                  fontSize: '0.9rem'
+                }}
+              />
+              {csvFile && (
+                <small style={{ color: '#28a745', fontSize: '0.8rem' }}>
+                  Selected: {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)
+                </small>
+              )}
+            </div>
+            
+            <button
+              onClick={handleCSVUpload}
+              disabled={isUploading || !csvFile || !uploadLoanCode || !uploadMonthEnd}
+              className="btn"
+              style={{
+                marginRight: '1rem',
+                opacity: (isUploading || !csvFile || !uploadLoanCode || !uploadMonthEnd) ? 0.6 : 1
+              }}
+            >
+              {isUploading ? 'Uploading...' : 'Upload CSV'}
+            </button>
+            
+            {uploadResult && (
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '1rem', 
+                background: '#d4edda', 
+                border: '1px solid #c3e6cb',
+                borderRadius: '4px',
+                fontSize: '0.9rem'
+              }}>
+                <strong style={{ color: '#155724' }}>✓ Upload Successful!</strong>
+                <div style={{ marginTop: '0.5rem', color: '#155724' }}>
+                  {uploadResult.message}
+                </div>
+                {uploadResult.data && (
+                  <details style={{ marginTop: '0.5rem' }}>
+                    <summary style={{ cursor: 'pointer', color: '#155724' }}>View Details</summary>
+                    <pre style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#155724' }}>
+                      {JSON.stringify(uploadResult.data, null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            )}
+            
+            {uploadError && (
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '1rem', 
+                background: '#f8d7da', 
+                border: '1px solid #f5c6cb',
+                borderRadius: '4px',
+                fontSize: '0.9rem',
+                color: '#721c24'
+              }}>
+                <strong>✗ Upload Failed:</strong> {uploadError}
+              </div>
+            )}
           </div>
         )}
 

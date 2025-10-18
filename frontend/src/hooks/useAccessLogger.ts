@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 export interface AccessLogParams {
-  action: 'GET_LOANS' | 'DOWNLOAD_CSV';
+  action: 'GET_LOANS' | 'DOWNLOAD_CSV' | 'UPLOAD_CSV';
   route: string;
   method?: string;
   description?: string;
