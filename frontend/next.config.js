@@ -2,6 +2,16 @@
 const nextConfig = {
   output: 'standalone',
   trailingSlash: true,
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
+  experimental: {
+    logging: {
+      level: 'verbose',
+    },
+  },
   async headers() {
     return [
       {
