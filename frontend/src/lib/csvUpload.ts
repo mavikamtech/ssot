@@ -35,8 +35,8 @@ export function parseCSV(content: string): CSVUploadData[] {
   }
 
   const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-  const requiredHeaders = ['loancode', 'monthend', 'cashflowbasedonmonthend'];
-  
+  const requiredHeaders = ['loanCode', 'monthEnd', 'cashflowBasedOnMonthEnd'];
+
   for (const required of requiredHeaders) {
     if (!headers.includes(required)) {
       throw new Error(`Missing required column: ${required}`);
@@ -55,21 +55,21 @@ export function parseCSV(content: string): CSVUploadData[] {
       row[header] = values[index];
     });
 
-    if (!row.loancode || !row.monthend || !row.cashflowbasedonmonthend) {
+    if (!row.loanCode || !row.monthEnd || !row.cashflowBasedOnMonthEnd) {
       throw new Error(`Row ${i + 1} is missing required data`);
     }
 
-    const cashflow = parseFloat(row.cashflowbasedonmonthend);
+    const cashflow = parseFloat(row.cashflowBasedOnMonthEnd);
     if (isNaN(cashflow)) {
-      throw new Error(`Row ${i + 1}: cashflowBasedonmonthend must be a valid number`);
+      throw new Error(`Row ${i + 1}: cashflowBasedOnMonthEnd must be a valid number`);
     }
 
     data.push({
-      loanCode: row.loancode,
-      monthEnd: row.monthend,
+      loanCode: row.loanCode,
+      monthEnd: row.monthEnd,
       cashflowBasedOnMonthEnd: cashflow,
       createdBy: '', // Will be set from auth
-      versionNote: row.versionNote || ''
+      versionNote: row.versionnote || ''
     });
   }
 
@@ -106,7 +106,10 @@ export function createDynamoRecord(
 ): Record<string, any> {
   const ts = Date.now();
   const monthEndEpoch = parseMonthEndToEpoch(data.monthEnd);
-  const ttlEpoch = monthEndEpoch + (6 * 30 * 24 * 60 * 60); // 6 months later
+  // Add exactly 6 months to the monthEnd date for TTL
+  const monthEndDate = new Date(data.monthEnd);
+  monthEndDate.setMonth(monthEndDate.getMonth() + 6);
+  const ttlEpoch = Math.floor(monthEndDate.getTime() / 1000);
 
   const pk = `LOAN#${data.loanCode}#ME#${data.monthEnd.replace(/\//g, '')}`;
   const sk = `TS#${ts}#FILE#${fileId}`;
