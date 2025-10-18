@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
 const REGION = process.env.AWS_REGION ?? "us-east-1";
-const DYNAMODB_TABLE = process.env.DYNAMODB_TABLE || 'ssot-loan-cashflow-forecasts';
+const DYNAMODB_TABLE = process.env.DYNAMODB_TABLE || 'ssot-loan-cashflow-forecasts-prod';
 const S3_BUCKET = process.env.S3_BUCKET || 'mavik-ssot-forecasts';
 
 // Create AWS client
