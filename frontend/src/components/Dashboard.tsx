@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useLazyQuery, gql } from '@apollo/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useAccessLogger } from '../hooks/useAccessLogger';
 
 const LOAN_CASHFLOW_QUERY = gql`
   query GetLoanCashFlow($loanCode: [String!]!, $endDate: String!) {
@@ -85,13 +86,22 @@ const sanitizeCSVValue = (value: string | number | null | undefined): string => 
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
+  const { logAccess } = useAccessLogger();
   const [endDate, setEndDate] = useState("");
   
   const [fetchData, { data, loading, error, called }] = useLazyQuery(LOAN_CASHFLOW_QUERY, {
     notifyOnNetworkStatusChange: true,
   });
 
-  const handleQueryClick = () => {
+  const handleQueryClick = async () => {
+    // Log access event
+    await logAccess({
+      action: 'GET_LOANS',
+      route: '/api/graphql',
+      method: 'POST',
+      description: `Fetching loan cash flow data${endDate ? ` for end date: ${endDate}` : ' (all dates)'}`
+    });
+
     fetchData({
       variables: {
         loanCode: [],
@@ -100,11 +110,19 @@ export default function Dashboard() {
     });
   };
 
-  const downloadCSV = () => {
+  const downloadCSV = async () => {
     if (!data?.loanCashFlow?.byLoanCode || data.loanCashFlow.byLoanCode.length === 0) {
       alert('No data available to download');
       return;
     }
+
+    // Log access event
+    await logAccess({
+      action: 'DOWNLOAD_CSV',
+      route: '/loans/csv',
+      method: 'GET',
+      description: `Downloading loan cash flow CSV with ${data.loanCashFlow.byLoanCode.length} records${endDate ? ` for end date: ${endDate}` : ' (all dates)'}`
+    });
 
     // Define CSV headers in the desired order
     const headers = [
