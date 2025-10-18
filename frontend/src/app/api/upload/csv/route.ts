@@ -76,13 +76,20 @@ export async function POST(request: NextRequest) {
     // Parse CSV data
     let csvData: CSVUploadData[];
     try {
+      console.log('Starting CSV parsing...');
       csvData = parseCSV(fileContent);
+      console.log(`Parsed ${csvData.length} rows from CSV:`, csvData.map(row => ({
+        loanCode: row.loanCode,
+        monthEnd: row.monthEnd,
+        cashflowBasedOnMonthEnd: row.cashflowBasedOnMonthEnd
+      })));
 
       // Validate that all loanCode values in CSV match the form parameter
       const mismatchedRows = csvData.filter(
         row => row.loanCode !== loanCode
       );
       if (mismatchedRows.length > 0) {
+        console.log('Found mismatched loan codes:', mismatchedRows);
         return NextResponse.json(
           { 
             error: 'CSV contains loanCode values that do not match the form parameter',
@@ -125,8 +132,16 @@ export async function POST(request: NextRequest) {
     const savedRecords = [];
     const errors = [];
 
+    console.log(`Starting to process ${csvData.length} CSV records for upload`);
+
     for (let i = 0; i < csvData.length; i++) {
       try {
+        console.log(`Processing row ${i + 1}:`, {
+          loanCode: csvData[i].loanCode,
+          monthEnd: csvData[i].monthEnd,
+          cashflowBasedOnMonthEnd: csvData[i].cashflowBasedOnMonthEnd
+        });
+
         const record = createDynamoRecord(
           csvData[i],
           fileId,
@@ -137,13 +152,22 @@ export async function POST(request: NextRequest) {
           user.email
         );
         
+        console.log(`Created DynamoDB record for row ${i + 1}:`, {
+          PK: record.PK.S,
+          SK: record.SK.S,
+          loan_code: record.loan_code.S
+        });
+        
         await saveToDynamoDB(record);
+        console.log(`Successfully saved row ${i + 1} to DynamoDB`);
+        
         savedRecords.push({
           loanCode: csvData[i].loanCode,
           monthEnd: csvData[i].monthEnd,
           cashflowBasedOnMonthEnd: csvData[i].cashflowBasedOnMonthEnd
         });
       } catch (saveError: any) {
+        console.error(`Failed to save row ${i + 1}:`, saveError);
         errors.push({
           row: i + 1,
           data: csvData[i],
@@ -154,10 +178,23 @@ export async function POST(request: NextRequest) {
 
     const processingTime = Date.now() - startTime;
 
-    // Return results
+    console.log('Upload summary:', {
+      recordsProcessed: csvData.length,
+      recordsSaved: savedRecords.length,
+      recordsWithErrors: errors.length,
+      processingTime: `${processingTime}ms`
+    });
+
+    // Return results with better messaging
+    const message = savedRecords.length > 0 
+      ? `Successfully uploaded CSV with ${savedRecords.length} records`
+      : errors.length > 0 
+        ? `CSV upload failed - all ${csvData.length} records had errors`
+        : `CSV upload completed but no records were processed`;
+
     return NextResponse.json({
-      success: true,
-      message: `Successfully uploaded CSV with ${savedRecords.length} records`,
+      success: savedRecords.length > 0,
+      message,
       data: {
         fileId,
         processId,
