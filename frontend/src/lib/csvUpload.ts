@@ -158,15 +158,9 @@ export async function saveToDynamoDB(record: Record<string, any>): Promise<void>
     Item: record
   });
 
-  console.log(`Attempting to save to DynamoDB table: ${DYNAMODB_TABLE}`);
-  console.log('Record PK:', record.PK?.S);
-  console.log('Record SK:', record.SK?.S);
-
   try {
-    const result = await dynamoDbClient.send(command);
-    console.log('DynamoDB save successful:', result);
+    await dynamoDbClient.send(command);
   } catch (error) {
-    console.error('DynamoDB save failed:', error);
     throw new Error(`Failed to save to DynamoDB: ${error}`);
   }
 }
