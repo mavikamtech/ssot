@@ -35,7 +35,7 @@ export function parseCSV(content: string): CSVUploadData[] {
   }
 
   const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-  const requiredHeaders = ['loanCode', 'monthEnd', 'cashflowBasedOnMonthEnd'];
+  const requiredHeaders = ['loancode', 'monthend', 'cashflowbasedonmonthend'];
 
   for (const required of requiredHeaders) {
     if (!headers.includes(required)) {
@@ -55,18 +55,18 @@ export function parseCSV(content: string): CSVUploadData[] {
       row[header] = values[index];
     });
 
-    if (!row.loanCode || !row.monthEnd || !row.cashflowBasedOnMonthEnd) {
+    if (!row.loancode || !row.monthend || !row.cashflowbasedonmonthend) {
       throw new Error(`Row ${i + 1} is missing required data`);
     }
 
-    const cashflow = parseFloat(row.cashflowBasedOnMonthEnd);
+    const cashflow = parseFloat(row.cashflowbasedonmonthend);
     if (isNaN(cashflow)) {
-      throw new Error(`Row ${i + 1}: cashflowBasedOnMonthEnd must be a valid number`);
+      throw new Error(`Row ${i + 1}: cashflowbasedonmonthend must be a valid number`);
     }
 
     data.push({
-      loanCode: row.loanCode,
-      monthEnd: row.monthEnd,
+      loanCode: row.loancode,
+      monthEnd: row.monthend,
       cashflowBasedOnMonthEnd: cashflow,
       createdBy: '', // Will be set from auth
       versionNote: row.versionnote || ''
