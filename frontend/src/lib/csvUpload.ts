@@ -76,14 +76,14 @@ export function parseCSV(content: string): CSVUploadData[] {
   return data;
 }
 
-export function createS3Key(loanCode: string, monthEnd: string, email: string): string {
-  const date = new Date(monthEnd);
+export function createS3Key(loanCode: string, email: string): string {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5);
+  const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5);
   
-  return `forecasts/loancashflow/${year}/${month}/${day}/${timestamp}_${email}.csv`;
+  return `forecasts/loancashflow/${loanCode}/${year}/${month}/${day}/${timestamp}_${email}.csv`;
 }
 
 export function parseMonthEndToEpoch(monthEnd: string): number {

@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const loanCode = formData.get('loanCode') as string;
-    const monthEnd = formData.get('monthEnd') as string;
     const versionNote = formData.get('versionNote') as string;
 
     if (!file) {
@@ -49,9 +48,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!loanCode || !monthEnd) {
+    if (!loanCode) {
       return NextResponse.json(
-        { error: 'Loan code and month end are required' },
+        { error: 'Loan code is required' },
         { status: 400 }
       );
     }
@@ -79,27 +78,24 @@ export async function POST(request: NextRequest) {
     try {
       csvData = parseCSV(fileContent);
 
-      // Validate that all loanCode and monthEnd values in CSV match the form parameters
+      // Validate that all loanCode values in CSV match the form parameter
       const mismatchedRows = csvData.filter(
-        row =>
-          row.loanCode !== loanCode ||
-          row.monthEnd !== monthEnd
+        row => row.loanCode !== loanCode
       );
       if (mismatchedRows.length > 0) {
         return NextResponse.json(
           { 
-            error: 'CSV contains loanCode or monthEnd values that do not match the form parameters',
-            mismatchedRows: mismatchedRows.map((row, idx) => ({ row: idx + 1, loanCode: row.loanCode, monthEnd: row.monthEnd }))
+            error: 'CSV contains loanCode values that do not match the form parameter',
+            mismatchedRows: mismatchedRows.map((row, idx) => ({ row: idx + 1, loanCode: row.loanCode }))
           },
           { status: 400 }
         );
       }
       
-      // Set the loan code, month end, and created by for all rows
+      // Set the loan code and created by for all rows
       csvData = csvData.map(row => ({
         ...row,
         loanCode: loanCode,
-        monthEnd: monthEnd,
         createdBy: user.email,
         versionNote: versionNote || row.versionNote || 'CSV upload'
       }));
@@ -120,7 +116,7 @@ export async function POST(request: NextRequest) {
     // Generate IDs and calculate file hash
     const { fileId, processId } = generateUUIDs();
     const contentSha256 = calculateSHA256(fileContent);
-    const s3Key = createS3Key(loanCode, monthEnd, user.email);
+    const s3Key = createS3Key(loanCode, user.email);
 
     // Mock S3 upload (get etag)
     const etag = await mockS3Upload(s3Key, fileContent);

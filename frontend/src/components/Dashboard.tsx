@@ -109,7 +109,6 @@ export default function Dashboard() {
   // CSV Upload states
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploadLoanCode, setUploadLoanCode] = useState("");
-  const [uploadMonthEnd, setUploadMonthEnd] = useState("");
   const [uploadVersionNote, setUploadVersionNote] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
@@ -167,7 +166,7 @@ export default function Dashboard() {
   };
 
   const handleCSVUpload = async () => {
-    if (!csvFile || !uploadLoanCode || !uploadMonthEnd) {
+    if (!csvFile || !uploadLoanCode) {
       setUploadError('Please fill in all required fields and select a CSV file');
       return;
     }
@@ -182,13 +181,12 @@ export default function Dashboard() {
         action: 'UPLOAD_CSV',
         route: '/api/upload/csv',
         method: 'POST',
-        description: `Uploading CSV for loan ${uploadLoanCode} - ${uploadMonthEnd}`
+        description: `Uploading CSV for loan ${uploadLoanCode}`
       });
 
       const formData = new FormData();
       formData.append('file', csvFile);
       formData.append('loanCode', uploadLoanCode);
-      formData.append('monthEnd', uploadMonthEnd);
       if (uploadVersionNote) {
         formData.append('versionNote', uploadVersionNote);
       }
@@ -209,7 +207,6 @@ export default function Dashboard() {
       // Clear form on success
       setCsvFile(null);
       setUploadLoanCode('');
-      setUploadMonthEnd('');
       setUploadVersionNote('');
       
       // Refresh data if we have the same loan loaded
@@ -520,7 +517,7 @@ export default function Dashboard() {
                 Upload CSV Data
               </h3>
               <p style={{ marginBottom: '1rem', fontSize: '0.9rem', color: '#6c757d' }}>
-                Upload a CSV file with loan cash flow data. Required columns: loanCode, monthEnd, cashflowBasedOnMonthEnd
+                Upload a CSV file with loan cash flow data. Required columns: loancode, monthend, cashflowbasedonmonthend. Multiple months of data are allowed.
               </p>
               <details style={{ marginBottom: '1rem' }}>
                 <summary style={{ cursor: 'pointer', fontSize: '0.9rem', color: '#007bff' }}>
@@ -535,50 +532,29 @@ export default function Dashboard() {
                   borderRadius: '4px',
                   color: '#495057'
                 }}>
-{`loanCode,monthEnd,cashflowBasedOnMonthEnd
-VS1-0001,2024-12-31,150000.50
+{`loancode,monthend,cashflowbasedonmonthend
+VS1-0001,2024-11-30,150000.50
 VS1-0001,2024-12-31,275000.00`}
                 </pre>
               </details>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    Loan Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={uploadLoanCode}
-                    onChange={(e) => setUploadLoanCode(e.target.value)}
-                    placeholder="e.g., VS1-0001"
-                    style={{
-                      padding: '0.5rem',
-                      border: '1px solid #ced4da',
-                      borderRadius: '4px',
-                      width: '100%',
-                      fontSize: '0.9rem'
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    Month End *
-                  </label>
-                  <input
-                    type="text"
-                    value={uploadMonthEnd}
-                    onChange={(e) => setUploadMonthEnd(e.target.value)}
-                    placeholder="e.g., 2024-12-31"
-                    style={{
-                      padding: '0.5rem',
-                      border: '1px solid #ced4da',
-                      borderRadius: '4px',
-                      width: '100%',
-                      fontSize: '0.9rem'
-                    }}
-                  />
-                </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  Loan Code *
+                </label>
+                <input
+                  type="text"
+                  value={uploadLoanCode}
+                  onChange={(e) => setUploadLoanCode(e.target.value)}
+                  placeholder="e.g., VS1-0001"
+                  style={{
+                    padding: '0.5rem',
+                    border: '1px solid #ced4da',
+                    borderRadius: '4px',
+                    width: '100%',
+                    fontSize: '0.9rem'
+                  }}
+                />
               </div>
               
               <div style={{ marginBottom: '1rem' }}>
@@ -625,11 +601,11 @@ VS1-0001,2024-12-31,275000.00`}
               
               <button
                 onClick={handleCSVUpload}
-                disabled={isUploading || !csvFile || !uploadLoanCode || !uploadMonthEnd}
+                disabled={isUploading || !csvFile || !uploadLoanCode}
                 className="btn"
                 style={{
                   marginRight: '1rem',
-                  opacity: (isUploading || !csvFile || !uploadLoanCode || !uploadMonthEnd) ? 0.6 : 1
+                  opacity: (isUploading || !csvFile || !uploadLoanCode) ? 0.6 : 1
                 }}
               >
                 {isUploading ? 'Uploading...' : 'Upload CSV'}
