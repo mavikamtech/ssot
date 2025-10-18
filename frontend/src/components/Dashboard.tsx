@@ -373,7 +373,7 @@ export default function Dashboard() {
               Upload CSV Data
             </h3>
             <p style={{ marginBottom: '1rem', fontSize: '0.9rem', color: '#6c757d' }}>
-              Upload a CSV file with loan cash flow data. Required columns: loancode, monthend, cashflowBasedonmonthend
+              Upload a CSV file with loan cash flow data. Required columns: loancode, monthend, cashflowBasedOnMonthEnd
             </p>
             <details style={{ marginBottom: '1rem' }}>
               <summary style={{ cursor: 'pointer', fontSize: '0.9rem', color: '#007bff' }}>
@@ -388,7 +388,7 @@ export default function Dashboard() {
                 borderRadius: '4px',
                 color: '#495057'
               }}>
-{`loancode,monthend,cashflowBasedonmonthend,versionnote
+{`loancode,monthend,cashflowBasedOnMonthEnd,versionnote
 VS1-0001,2024-12-31,150000.50,Q4 forecast
 VS1-0002,2024-12-31,275000.00,Updated projection`}
               </pre>
