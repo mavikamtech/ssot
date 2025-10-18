@@ -1,4 +1,5 @@
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -6,8 +7,9 @@ const REGION = process.env.AWS_REGION ?? "us-east-1";
 const DYNAMODB_TABLE = process.env.DYNAMODB_TABLE || 'ssot-loan-cashflow-forecasts-prod';
 const S3_BUCKET = process.env.S3_BUCKET || 'mavik-ssot-forecasts';
 
-// Create AWS client
+// Create AWS clients
 const dynamoDbClient = new DynamoDBClient({ region: REGION });
+const s3Client = new S3Client({ region: REGION });
 
 export interface CSVUploadData {
   loanCode: string;
@@ -165,9 +167,38 @@ export async function saveToDynamoDB(record: Record<string, any>): Promise<void>
   }
 }
 
-// For now, we'll save S3 info in DynamoDB but not actually upload to S3
-// This can be extended later when S3 configuration is ready
+export async function uploadToS3(s3Key: string, content: string, contentType: string = 'text/csv'): Promise<string> {
+  // Check if we have AWS credentials configured
+  if (!process.env.AWS_ACCESS_KEY_ID && !process.env.AWS_PROFILE && !process.env.AWS_ROLE_ARN) {
+    console.warn('No AWS credentials found. Make sure AWS credentials are configured.');
+  }
+
+  const command = new PutObjectCommand({
+    Bucket: S3_BUCKET,
+    Key: s3Key,
+    Body: content,
+    ContentType: contentType,
+    Metadata: {
+      'uploaded-by': 'ssot-frontend',
+      'upload-timestamp': new Date().toISOString()
+    }
+  });
+
+  console.log(`Uploading to S3: s3://${S3_BUCKET}/${s3Key}`);
+
+  try {
+    const result = await s3Client.send(command);
+    console.log('S3 upload successful:', result.ETag);
+    return result.ETag || `"${createHash('md5').update(content).digest('hex')}"`;
+  } catch (error) {
+    console.error('S3 upload failed:', error);
+    throw new Error(`Failed to upload to S3: ${error}`);
+  }
+}
+
+// Deprecated: Keep for backward compatibility but log warning
 export async function mockS3Upload(s3Key: string, content: string): Promise<string> {
+  console.warn('DEPRECATED: mockS3Upload is deprecated. Use uploadToS3 instead.');
   // Generate a mock etag for DynamoDB record
   const etag = '"' + createHash('md5').update(content).digest('hex') + '"';
   return etag;

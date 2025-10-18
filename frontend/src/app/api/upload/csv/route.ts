@@ -7,7 +7,7 @@ import {
   createS3Key, 
   createDynamoRecord, 
   saveToDynamoDB, 
-  mockS3Upload,
+  uploadToS3,
   CSVUploadData 
 } from '../../../../lib/csvUpload';
 
@@ -118,8 +118,22 @@ export async function POST(request: NextRequest) {
     const contentSha256 = calculateSHA256(fileContent);
     const s3Key = createS3Key(loanCode, user.email);
 
-    // Mock S3 upload (get etag)
-    const etag = await mockS3Upload(s3Key, fileContent);
+    // Upload file to S3
+    let etag: string;
+    try {
+      console.log('Uploading CSV file to S3...');
+      etag = await uploadToS3(s3Key, fileContent);
+      console.log('S3 upload completed successfully');
+    } catch (s3Error: any) {
+      console.error('S3 upload failed:', s3Error);
+      return NextResponse.json(
+        { 
+          error: 'Failed to upload file to S3', 
+          details: s3Error.message 
+        },
+        { status: 500 }
+      );
+    }
 
     // Save each row to DynamoDB
     const savedRecords = [];
