@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
       // Validate that all loanCode and monthEnd values in CSV match the form parameters
       const mismatchedRows = csvData.filter(
         row =>
-          (row.loanCode && row.loanCode !== loanCode) ||
-          (row.monthEnd && row.monthEnd !== monthEnd)
+          row.loanCode !== loanCode ||
+          row.monthEnd !== monthEnd
       );
       if (mismatchedRows.length > 0) {
         return NextResponse.json(
