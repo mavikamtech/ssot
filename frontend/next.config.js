@@ -7,11 +7,6 @@ const nextConfig = {
       fullUrl: true,
     },
   },
-  experimental: {
-    logging: {
-      level: 'verbose',
-    },
-  },
   async headers() {
     return [
       {
