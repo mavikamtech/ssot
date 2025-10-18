@@ -12,7 +12,7 @@ const dynamoDbClient = new DynamoDBClient({ region: REGION });
 export interface CSVUploadData {
   loanCode: string;
   monthEnd: string;
-  cashflowBasedonmonthend: number;
+  cashflowBasedOnMonthEnd: number;
   createdBy: string;
   versionNote?: string;
 }
@@ -67,9 +67,9 @@ export function parseCSV(content: string): CSVUploadData[] {
     data.push({
       loanCode: row.loancode,
       monthEnd: row.monthend,
-      cashflowBasedonmonthend: cashflow,
+      cashflowBasedOnMonthEnd: cashflow,
       createdBy: '', // Will be set from auth
-      versionNote: row.versionnote || ''
+      versionNote: row.versionNote || ''
     });
   }
 
@@ -125,7 +125,7 @@ export function createDynamoRecord(
     is_current: { BOOL: true },
     data: {
       M: {
-        cashflowBasedonmonthend: { N: data.cashflowBasedonmonthend.toString() }
+        cashflowBasedOnMonthEnd: { N: data.cashflowBasedOnMonthEnd.toString() }
       }
     },
     comments: { L: [

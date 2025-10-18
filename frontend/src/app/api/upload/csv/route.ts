@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         savedRecords.push({
           loanCode: csvData[i].loanCode,
           monthEnd: csvData[i].monthEnd,
-          cashflowBasedonmonthend: csvData[i].cashflowBasedonmonthend
+          cashflowBasedOnMonthEnd: csvData[i].cashflowBasedOnMonthEnd
         });
       } catch (saveError: any) {
         errors.push({
