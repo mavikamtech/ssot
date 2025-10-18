@@ -95,9 +95,19 @@ export default function Dashboard() {
   const [uploadMonthEnd, setUploadMonthEnd] = useState("");
   const [uploadVersionNote, setUploadVersionNote] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  interface UploadResultData {
+    fileId: string;
+    processId: string;
+    recordsProcessed: number;
+    recordsSaved: number;
+    recordsWithErrors: number;
+    s3Key: string;
+    contentSha256: string;
+    processingTime: string;
+  }
   interface UploadResult {
     message: string;
-    data?: any; // Replace 'any' with a more specific type if you know the structure of 'data'
+    data?: UploadResultData;
   }
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
